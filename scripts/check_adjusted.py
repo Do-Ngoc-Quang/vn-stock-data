@@ -18,6 +18,7 @@ Chạy trên máy có mạng và đã cài vnstock, từ thư mục gốc của 
 2. So sánh giữa các nguồn. Cùng một mã, cùng một ngày cũ, nếu một nguồn điều chỉnh
    còn nguồn kia không thì tỷ lệ giá khác 1 rõ rệt.
 
+Mỗi cặp (mã, nguồn) là một lần gọi và nguồn giới hạn 10 lượt/phút, nên mặc định nghỉ 7 giây giữa các lần gọi.
 Script chỉ đọc dữ liệu. Báo cáo ghi vào data/probe/adjusted_report.json.
 Biên độ 7% là biên độ HOSE theo các nguồn tra cứu, chưa đối chiếu quy chế gốc (D8),
 nên dùng mã niêm yết trên HOSE và có thể chỉnh bằng --limit.
@@ -64,6 +65,26 @@ def find_jumps(close, limit: float, tolerance: float) -> list[dict]:
     return out
 
 
+def find_ratio_step(ratios: list[float], dates: list, window: int = 10, threshold: float = 0.0004):
+    """Tìm ngày tỷ lệ giữa hai nguồn đổi mức (bước nhảy ổn định, không phải nhiễu làm tròn).
+
+    So trung vị `window` ngày trước với `window` ngày sau tại từng ngày; trả về ngày có
+    chênh lệch lớn nhất nếu vượt `threshold`. Ngày đó thường là ngày một nguồn bắt đầu
+    áp điều chỉnh (ví dụ ngày giao dịch không hưởng quyền) còn nguồn kia thì không.
+    """
+    best = None
+    for i in range(window, len(ratios) - window + 1):
+        before = statistics.median(ratios[i - window:i])
+        after = statistics.median(ratios[i:i + window])
+        diff = after - before
+        if best is None or abs(diff) > abs(best[0]):
+            best = (diff, i, before, after)
+    if best is None or abs(best[0]) <= threshold:
+        return None
+    diff, i, before, after = best
+    return {"date": str(dates[i]), "ratio_before": round(before, 4), "ratio_after": round(after, 4)}
+
+
 def compare_sources(series_by_source: dict) -> list[dict]:
     rows = []
     names = list(series_by_source)
@@ -80,6 +101,7 @@ def compare_sources(series_by_source: dict) -> list[dict]:
                 "ratio_newest": round(ratios[-1], 4),
                 "ratio_median": round(statistics.median(ratios), 4),
                 "oldest_date": str(common[0]),
+                "step": find_ratio_step(ratios, common),
             })
     return rows
 
@@ -91,7 +113,8 @@ def main() -> None:
     ap.add_argument("--years", type=int, default=5)
     ap.add_argument("--limit", type=float, default=0.07, help="biên độ giá/phiên (HOSE: 0.07)")
     ap.add_argument("--tolerance", type=float, default=0.005, help="dung sai cho làm tròn bước giá")
-    ap.add_argument("--sleep", type=float, default=0.5, help="nghỉ giữa các lần gọi (giây)")
+    ap.add_argument("--sleep", type=float, default=7.0,
+                    help="nghỉ giữa các lần gọi (giây); vnstock 5.2.2 giới hạn 10 lượt/phút")
     ap.add_argument("--out", default="data/probe/adjusted_report.json")
     args = ap.parse_args()
 
@@ -141,6 +164,10 @@ def main() -> None:
         for c in v["cross_source"]:
             print(f"      so nguồn {c['pair']}: ngày cũ nhất {c['oldest_date']} tỷ lệ {c['ratio_oldest']}, "
                   f"mới nhất {c['ratio_newest']}, trung vị {c['ratio_median']}")
+            if c.get("step"):
+                st = c["step"]
+                print(f"      bước đổi mức tỷ lệ quanh {st['date']}: {st['ratio_before']} → {st['ratio_after']} "
+                      "(một nguồn điều chỉnh từ ngày này, nguồn kia thì không)")
 
     print("\nCách đọc kết quả:")
     for source, n in total_jumps.items():

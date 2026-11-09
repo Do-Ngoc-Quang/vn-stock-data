@@ -1,0 +1,225 @@
+{
+  "run_at": "2026-11-09T15:31:56+0700",
+  "vnstock_version": "5.2.2",
+  "range": [
+    "2021-11-10",
+    "2026-11-09"
+  ],
+  "limit": 0.07,
+  "symbols": {
+    "FPT": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 1.81
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.48
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 0.9998,
+          "ratio_newest": 1.0,
+          "ratio_median": 0.9997,
+          "oldest_date": "2025-11-10"
+        }
+      ]
+    },
+    "VNM": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.22
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.27
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 0.9991,
+          "ratio_newest": 1.0,
+          "ratio_median": 0.9992,
+          "oldest_date": "2025-11-10"
+        }
+      ]
+    },
+    "HPG": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.22
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.33
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 1.0,
+          "ratio_newest": 1.0,
+          "ratio_median": 1.0,
+          "oldest_date": "2025-11-10"
+        }
+      ]
+    },
+    "MWG": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.21
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.3
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 1.0,
+          "ratio_newest": 1.0,
+          "ratio_median": 1.0,
+          "oldest_date": "2025-11-10"
+        }
+      ]
+    },
+    "SSI": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.21
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.28
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 0.9984,
+          "ratio_newest": 1.0,
+          "ratio_median": 0.9991,
+          "oldest_date": "2025-11-10"
+        }
+      ]
+    },
+    "REE": {
+      "sources": {
+        "VCI": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        },
+        "KBS": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        }
+      },
+      "cross_source": []
+    },
+    "PNJ": {
+      "sources": {
+        "VCI": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        },
+        "KBS": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        }
+      },
+      "cross_source": []
+    },
+    "VCB": {
+      "sources": {
+        "VCI": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        },
+        "KBS": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        }
+      },
+      "cross_source": []
+    },
+    "VIC": {
+      "sources": {
+        "VCI": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        },
+        "KBS": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        }
+      },
+      "cross_source": []
+    },
+    "MSN": {
+      "sources": {
+        "VCI": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        },
+        "KBS": {
+          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+        }
+      },
+      "cross_source": []
+    }
+  },
+  "summary": {
+    "total_jumps_by_source": {
+      "VCI": 0,
+      "KBS": 0
+    },
+    "fetch_errors": [
+      "REE/VCI",
+      "REE/KBS",
+      "PNJ/VCI",
+      "PNJ/KBS",
+      "VCB/VCI",
+      "VCB/KBS",
+      "VIC/VCI",
+      "VIC/KBS",
+      "MSN/VCI",
+      "MSN/KBS"
+    ],
+    "symbols_with_data": 5
+  }
+}
