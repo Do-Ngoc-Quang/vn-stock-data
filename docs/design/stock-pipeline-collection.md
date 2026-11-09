@@ -58,14 +58,13 @@ Script `scripts/probe_vnstock.py` gọi vnstock trên một vài mã và ghi bá
 | Nguồn đã chạy thành công | `vci` (32 dòng cho khoảng 45 ngày, cả FPT lẫn VCB) |
 | Cột trả về | `time, open, high, low, close, volume` |
 | Kiểu dữ liệu | `time`: datetime có múi giờ `Asia/Ho_Chi_Minh`; giá: float64; `volume`: int64 |
-| Đơn vị giá | Rất có khả năng là **nghìn VND**: `close` FPT 51.0, VCB 53.6; giá có một chữ số thập phân. Chờ xác nhận bằng cách so với bảng giá cùng ngày |
+| Đơn vị giá | **Nghìn VND** (đã xác nhận với bảng giá): `close` FPT 51.0, VCB 53.6 tương ứng 51.000 và 53.600 VND. Adapter nhân 1000 |
 | Giá đã điều chỉnh | Chưa kiểm tra |
 | Thời gian phản hồi | Trung vị khoảng 0,07–0,08 giây; lần đầu tới 1,3 giây; 5 lần liên tiếp không lỗi |
 | Giới hạn tốc độ | Chưa quan sát được (mới 5 lần gọi) |
 | Dòng của ngày chạy | Có dòng 2026-11-09 khi chạy sau 15:00 |
 
 **Còn lại của D1:**
-- xác nhận đơn vị giá với bảng giá thực tế;
 - kiểm tra giá đã điều chỉnh (hướng dẫn thủ công có trong báo cáo);
 - đo giới hạn tốc độ bằng nhiều lần gọi hơn, trên cả universe;
 - thử các nguồn khác (`kbs`, `vnd`) để biết nguồn nào ổn định nhất;
@@ -352,7 +351,7 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 
 | Mã | Nội dung | Cách đóng |
 |---|---|---|
-| D1 | Xác minh vnstock | **Đã đóng một phần.** Đã biết cách gọi, cột, kiểu, độ trễ (mục 2.2). Còn: xác nhận đơn vị, giá điều chỉnh, giới hạn tốc độ, và thế hệ 6 / yêu cầu khóa |
+| D1 | Xác minh vnstock | **Đã đóng một phần.** Đã biết cách gọi, cột, kiểu, đơn vị giá, độ trễ (mục 2.2). Còn: giá điều chỉnh, giới hạn tốc độ, và thế hệ 6 / yêu cầu khóa |
 | D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
 
 ---
