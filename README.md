@@ -4,7 +4,7 @@ Dữ liệu giao dịch cổ phiếu Việt Nam (EOD, cập nhật khi người 
 
 > Trạng thái: bản nháp thiết kế, chưa có code.
 >
-> Toàn bộ chạy **cục bộ**: chạy tay pipeline Python → DuckDB + Parquet → MCP server stdio. Chưa dùng đám mây.
+> Toàn bộ chạy **cục bộ**: chạy tay pipeline Python → DuckDB + Parquet → MCP server stdio, đóng gói bằng Docker. Chưa dùng đám mây.
 
 ## Tài liệu thiết kế
 
@@ -20,6 +20,8 @@ Hai tài liệu nối với nhau chỉ qua schema ở mục 6 của tài liệu 
 ```
 vn-stock-data/
 ├── README.md
+├── Dockerfile                  # Một image dùng chung cho pipeline và MCP server (dự kiến)
+├── compose.yaml                # Chạy pipeline (dự kiến)
 ├── docs/
 │   └── design/                 # Tài liệu thiết kế
 ├── config/                     # Universe (danh sách mã), cấu hình pipeline

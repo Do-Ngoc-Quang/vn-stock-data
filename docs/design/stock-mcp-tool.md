@@ -194,7 +194,7 @@ Khuyến nghị agent gọi tool này trước khi truy vấn lần đầu trong
 
 ## 7. Triển khai và bảo mật
 
-- MCP server chạy **cục bộ qua stdio**, do ứng dụng agent trên cùng máy khởi chạy. Không mở cổng mạng nên không cần xác thực.
+- MCP server chạy **cục bộ qua stdio**, do ứng dụng agent trên cùng máy khởi chạy. Không mở cổng mạng nên không cần xác thực. Khi chạy trong Docker: `docker run -i --rm --network none` với `data/` mount chỉ đọc (chi tiết ở `stock-pipeline-collection.md`, mục 3.2).
 - Mở `data/curated.duckdb` ở chế độ chỉ đọc, **mỗi yêu cầu một kết nối ngắn rồi đóng**, để pipeline đổi tên tệp khi công bố (`stock-pipeline-collection.md`, mục 6.5). Nếu tệp đang được thay, thử lại ngắn rồi mới báo lỗi.
 - Truy vấn tham số hóa; không nối chuỗi từ đầu vào của agent.
 - Đánh dấu cả hai tool là chỉ đọc trong mô tả MCP.

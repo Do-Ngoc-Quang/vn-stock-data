@@ -109,6 +109,23 @@ Kết quả quyết định cách viết adapter (mục 4.4) và thời gian ch�
 
 **Ràng buộc của DuckDB cần tính trước:** một tệp DuckDB không cho tiến trình khác đọc trong lúc một tiến trình đang ghi. Vì vậy pipeline **không ghi thẳng vào tệp đang phục vụ** (xem mục 6.5), và MCP server mở tệp ở chế độ chỉ đọc, mỗi yêu cầu một kết nối ngắn rồi đóng.
 
+### 3.2 Đóng gói bằng Docker
+
+Pipeline và MCP server chạy trong container, dùng **chung một image** (cùng mã, cùng phiên bản DuckDB và vnstock), chỉ khác lệnh khởi chạy.
+
+| Thành phần | Cách chạy | Mount `data/` | Mạng |
+|---|---|---|---|
+| Pipeline | `docker compose run --rm pipeline`: một container chạy xong rồi thoát | đọc/ghi | ra Internet (gọi vnstock) |
+| MCP server | `docker run -i --rm ... mcp-server`, do ứng dụng agent khởi chạy; dùng `-i`, không dùng `-t` để stdio hoạt động | **chỉ đọc** (`:ro`) | không có (`--network none`) |
+
+Quy tắc:
+- **Mount cả thư mục `data/`, không mount riêng tệp DB.** Công bố bằng đổi tên tạo inode mới; nếu chỉ mount một tệp, container MCP vẫn giữ tệp cũ. Tệp tạm và tệp phục vụ phải cùng một mount để đổi tên nguyên tử.
+- **Docker Desktop (macOS/Windows):** đổi tên nguyên tử và khóa tệp của DuckDB trên bind mount kém tin cậy hơn Linux. Khi gặp vấn đề, dùng named volume (sao lưu `data/` khi đó đi qua `docker cp` hoặc một container phụ).
+- Đặt `TZ=Asia/Ho_Chi_Minh`, vì quy tắc bỏ phiên chưa chốt (mục 4.1) phụ thuộc giờ Việt Nam.
+- Chạy bằng UID của người dùng trên máy chủ để tệp trong `data/` không thuộc root.
+- Ghim phiên bản vnstock trong image; probe (mục 2.2) chạy trong chính image này để kết quả khớp môi trường thật.
+- Cấu hình (`config/`) mount chỉ đọc; image không chứa bí mật.
+
 ---
 
 ## 4. Pipeline thu thập
@@ -328,12 +345,13 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 ## 8. Lộ trình (phần pipeline)
 
 **Giai đoạn 0 — Xác minh (nhỏ, làm trước)**
-- Viết và chạy script probe (mục 2.2). Chốt D1.
+- Viết và chạy script probe (mục 2.2), trong image Docker nếu đã có. Chốt D1.
 
 **Giai đoạn 1 — Pipeline giá**
 - Adapter vnstock, raw, validation, `prices_daily`, `runs`, `symbol_run_status`, `quality_issues`.
 - Chạy thủ công và kiểm tra bằng mắt trên một số mã.
 - Lệnh chạy một phát (`python -m pipeline.run`) in tóm tắt kết quả.
+- `Dockerfile` và `compose.yaml` cho pipeline (mục 3.2); probe chạy trong cùng image.
 
 **Giai đoạn 2 — Chỉ báo và công bố nguyên tử**
 - Tính `features_daily`, công bố nguyên tử theo mục 6.5.
