@@ -10,7 +10,7 @@
 
 Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") về giao dịch cổ phiếu Việt Nam để AI agent truy vấn, phân tích insight và hỗ trợ ra quyết định mua/bán của người dùng. Tài liệu này chỉ nói về **phía sản xuất dữ liệu**: từ nguồn bên ngoài đến các bảng đã làm sạch.
 
-### 1.2 Phạm vi giai đoạn đầu
+### 1.2 Phạm vi
 
 - Thị trường: Việt Nam (HOSE, HNX, UPCoM).
 - Dữ liệu: giá và khối lượng giao dịch hàng ngày (OHLCV), đã điều chỉnh.
@@ -22,7 +22,10 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 
 - Dữ liệu trong phiên (intraday) và streaming.
 - Đặt lệnh hoặc giao dịch tự động.
-- Báo cáo tài chính và dữ liệu vĩ mô (để giai đoạn sau, mục 8).
+- Báo cáo tài chính và dữ liệu vĩ mô.
+- Nguồn dữ liệu thứ hai để đối chiếu.
+- Backtest tín hiệu.
+- Triển khai lên máy chủ hoặc đám mây.
 
 ### 1.4 Nguyên tắc thiết kế
 
@@ -39,10 +42,7 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 
 ### 2.1 Lựa chọn
 
-| Nguồn | Vai trò | Ghi chú |
-|---|---|---|
-| **vnstock** (Python, miễn phí) | Nguồn chính | Lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi. |
-| **SSI FastConnect Data** | Nguồn đối chiếu (hoãn) | API chính thức; chưa dùng ở giai đoạn đầu (D5). |
+Nguồn duy nhất là **vnstock** (Python, miễn phí). Thư viện lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi; vì vậy mọi lời gọi nằm sau adapter (mục 4.4).
 
 ### 2.2 Script probe
 
@@ -210,7 +210,6 @@ Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng tạm là 15%, bằng biên độ l�
 | Mã kiểm tra | Điều kiện | Mức |
 |---|---|---|
 | `STALE_DATA` | Phiên mới nhất cách ngày chạy quá N ngày lịch (đề xuất N = 5) | warn |
-| `CROSS_SOURCE_MISMATCH` | Giá đóng cửa lệch nguồn đối chiếu quá ngưỡng trên mẫu ngẫu nhiên (chỉ khi có nguồn thứ hai) | warn |
 | `UNIVERSE_COVERAGE` | Tỷ lệ mã thành công thấp | xem 5.3 |
 
 `STALE_DATA` chỉ cảnh báo vì kỳ nghỉ dài (ví dụ Tết) có thể vượt N hợp lệ.
@@ -233,7 +232,7 @@ Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng tạm là 15%, bằng biên độ l�
 - Ngày giao dịch (`trade_date`): kiểu DATE, theo ngày địa phương Việt Nam (Asia/Ho_Chi_Minh).
 - Mã chứng khoán (`symbol`): chữ in hoa, ví dụ `FPT`, không kèm hậu tố sàn.
 - Thời điểm (`*_at`): TIMESTAMP có múi giờ (UTC).
-- Giá là **giá đã điều chỉnh** (cột `adjusted` luôn là true trong giai đoạn này, giữ để sau mở rộng).
+- Giá là **giá đã điều chỉnh** (cột `adjusted` luôn là true).
 
 ### 6.2 Lớp raw
 
@@ -337,35 +336,30 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 | Mã | Nội dung | Cách đóng |
 |---|---|---|
 | D1 | Cột, đơn vị giá, giới hạn tốc độ của vnstock | Chạy script probe (mục 2.2). PyPI hiện không cung cấp tệp của gói `vnstock` (trạng thái quarantined), cần nguồn cài khác |
-| D5 | Nguồn đối chiếu thứ hai | Hoãn đến Giai đoạn 3; khi đó mới bật `CROSS_SOURCE_MISMATCH` |
 | D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
 
 ---
 
 ## 8. Lộ trình (phần pipeline)
 
-**Giai đoạn 0 — Xác minh (nhỏ, làm trước)**
-- Viết và chạy script probe (mục 2.2), trong image Docker nếu đã có. Chốt D1.
+Bốn giai đoạn, mỗi giai đoạn có điều kiện hoàn thành. Hoàn thành Giai đoạn 3 là kết thúc lộ trình; việc ngoài danh sách này nằm ngoài phạm vi (mục 1.3).
+
+**Giai đoạn 0 — Xác minh**
+- Viết và chạy script probe (mục 2.2), trong image Docker nếu đã có.
+- *Hoàn thành khi:* các mục probe đã có kết quả, D1 đóng, biết thời gian chạy VN100 và cách adapter đổi tên cột, đổi đơn vị.
 
 **Giai đoạn 1 — Pipeline giá**
 - Adapter vnstock, raw, validation, `prices_daily`, `runs`, `symbol_run_status`, `quality_issues`.
-- Chạy thủ công và kiểm tra bằng mắt trên một số mã.
-- Lệnh chạy một phát (`python -m pipeline.run`) in tóm tắt kết quả.
-- `Dockerfile` và `compose.yaml` cho pipeline (mục 3.2); probe chạy trong cùng image.
+- Lệnh `python -m pipeline.run` in tóm tắt kết quả; `Dockerfile` và `compose.yaml` (mục 3.2).
+- *Hoàn thành khi:* chạy được cho cả VN100; mã không đạt bị loại và có bản ghi `quality_issues`; chạy lại không tạo bản ghi trùng; kiểm tra bằng mắt một số mã.
 
 **Giai đoạn 2 — Chỉ báo và công bố nguyên tử**
-- Tính `features_daily`, công bố nguyên tử theo mục 6.5.
-- MCP tool ở giai đoạn này: xem `stock-mcp-tool.md`.
+- Tính `features_daily`, công bố nguyên tử theo mục 6.5. MCP tool ở giai đoạn này: xem `stock-mcp-tool.md`.
+- *Hoàn thành khi:* lần chạy `failed` không làm đổi dữ liệu đang phục vụ; chỉ báo khớp với tính độc lập bằng công cụ khác trên một số mã.
 
-**Giai đoạn 3 — Củng cố**
-- Nguồn đối chiếu (D5), sao lưu `data/`, báo cáo chất lượng dữ liệu theo từng lần chạy.
-
-**Giai đoạn 4 — Mở rộng**
-- Báo cáo tài chính (cần lưu ngày công bố để tránh sai lệch nhìn trước khi backtest).
-- Backtest các tín hiệu; ghi lại mọi khuyến nghị của AI để đánh giá sau này.
-
-**Giai đoạn 5 — Tùy chọn: đưa lên máy chủ**
-- Khi cần dùng từ nhiều máy: DuckDB sang Postgres, raw sang object storage, thêm scheduler trên dịch vụ đám mây, MCP sang HTTP có xác thực. Thay đổi nằm ở lớp lưu trữ và triển khai vì adapter `DataProvider`, schema (mục 6) và truy vấn tham số hóa đã tách riêng.
+**Giai đoạn 3 — Hoàn thiện**
+- Sao lưu `data/`, báo cáo chất lượng dữ liệu theo từng lần chạy, đối chiếu biên độ giá (D8).
+- *Hoàn thành khi:* khôi phục được `data/` từ bản sao lưu; D8 đóng và ngưỡng `LARGE_DAILY_MOVE` được chốt.
 
 ---
 

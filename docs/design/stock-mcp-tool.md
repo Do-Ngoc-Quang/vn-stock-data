@@ -10,7 +10,7 @@
 
 Cho phép AI agent truy vấn dữ liệu giao dịch cổ phiếu Việt Nam trong một khoảng thời gian do agent chọn, **từ 1 tuần đến 1 năm**, kèm các chỉ báo kỹ thuật đã được tính sẵn, để phân tích và hỗ trợ ra quyết định mua/bán của người dùng.
 
-### 1.2 Phạm vi giai đoạn đầu
+### 1.2 Phạm vi
 
 - Hai tool: `get_price_history` và `get_data_status`.
 - Dữ liệu cuối ngày (EOD), cập nhật mỗi khi người dùng chạy pipeline (khoảng mỗi tuần).
@@ -21,7 +21,8 @@ Cho phép AI agent truy vấn dữ liệu giao dịch cổ phiếu Việt Nam tr
 - Dữ liệu trong phiên, streaming.
 - Ghi dữ liệu, đặt lệnh hoặc giao dịch tự động.
 - Tính chỉ báo theo yêu cầu với chu kỳ tùy ý.
-- Tool tra cứu tổng hợp nhiều mã (ví dụ xếp hạng theo thay đổi giá): hoãn đến Giai đoạn 4, quyết định dựa trên log sử dụng thực tế.
+- Tool tra cứu tổng hợp nhiều mã (ví dụ xếp hạng theo thay đổi giá).
+- Dữ liệu và tool cho báo cáo tài chính.
 
 ---
 
@@ -206,18 +207,16 @@ Khuyến nghị agent gọi tool này trước khi truy vấn lần đầu trong
 
 ## 8. Lộ trình (phần MCP tool)
 
-Dùng chung đánh số giai đoạn với tài liệu pipeline.
+Dùng chung đánh số giai đoạn với tài liệu pipeline. Lộ trình kết thúc ở Giai đoạn 3.
 
 **Giai đoạn 2 — MCP tool** *(bắt đầu sau khi pipeline công bố được `features_daily`)*
 - MCP server với `get_price_history` và `get_data_status`.
-- Kiểm thử các quy tắc ở 4.3 và mã lỗi ở mục 6, bao gồm các trường hợp: mã thiếu lịch sử, mã bị loại, chưa có lần chạy `published`, `interval = 1W`.
-- Kiểm tra chéo: một số giá trị chỉ báo trả về so với tính độc lập bằng công cụ khác.
+- Kiểm thử các quy tắc ở 4.3 và mã lỗi ở mục 6, gồm các trường hợp: mã thiếu lịch sử, mã bị loại, chưa có lần chạy `published`, `interval = 1W`.
+- *Hoàn thành khi:* mọi mã lỗi ở mục 6 được kiểm thử; một số giá trị chỉ báo trả về khớp với tính độc lập bằng công cụ khác.
 
-**Giai đoạn 3 — Củng cố**
-- Log yêu cầu, đo kích thước kết quả thực tế để chỉnh giới hạn mục 4.3; giới hạn tốc độ nếu cần.
-
-**Giai đoạn 4 — Mở rộng**
-- Thêm tool/dữ liệu cho báo cáo tài chính khi pipeline có. Cân nhắc tool tổng hợp nhiều mã.
+**Giai đoạn 3 — Hoàn thiện**
+- Log yêu cầu, đo kích thước kết quả thực tế để chỉnh giới hạn ở 4.3.
+- *Hoàn thành khi:* giới hạn số mã và số dòng được xác nhận hoặc điều chỉnh theo kích thước kết quả đo được.
 
 ---
 
