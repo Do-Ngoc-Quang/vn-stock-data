@@ -1,8 +1,5 @@
 # Thiết kế: Pipeline thu thập dữ liệu giao dịch chứng khoán Việt Nam (hàng tuần)
 
-- **Trạng thái:** Bản nháp thiết kế (chưa có code)
-- **Phạm vi triển khai:** toàn bộ chạy **cục bộ trên máy cá nhân**, chưa dùng dịch vụ đám mây (xem mục 3.1)
-- **Ngày:** 2026-11-09
 - **Tài liệu liên quan:** `stock-mcp-tool.md` (MCP tool để AI agent truy vấn dữ liệu). Hai tài liệu nối với nhau **chỉ qua schema ở mục 6** của tài liệu này.
 
 ---
@@ -19,14 +16,13 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 - Dữ liệu: giá và khối lượng giao dịch hàng ngày (OHLCV), đã điều chỉnh.
 - Tần suất cập nhật: **mỗi tuần một lần, Thứ 6 lúc 18:00 (giờ Việt Nam)**.
 - Chỉ báo kỹ thuật tính sẵn (mục 6.4).
-- Chạy cục bộ: không có máy chủ, không có dịch vụ đám mây, không cần tài khoản bên ngoài ngoài nguồn dữ liệu.
+- Chạy hoàn toàn cục bộ trên máy cá nhân (mục 3.1).
 
 ### 1.3 Ngoài phạm vi
 
 - Dữ liệu trong phiên (intraday) và streaming.
 - Đặt lệnh hoặc giao dịch tự động.
 - Báo cáo tài chính và dữ liệu vĩ mô (để giai đoạn sau, mục 8).
-- Đưa ra lời khuyên đầu tư. Hệ thống chỉ cung cấp dữ liệu; quyết định cuối cùng thuộc về người dùng.
 
 ### 1.4 Nguyên tắc thiết kế
 
@@ -46,30 +42,19 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 | Nguồn | Vai trò | Ghi chú |
 |---|---|---|
 | **vnstock** (Python, miễn phí) | Nguồn chính | Lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi. |
-| **SSI FastConnect Data** | Nguồn đối chiếu (tùy chọn) | API chính thức, có dữ liệu EOD và realtime. Đăng ký cần đến chi nhánh SSI hoặc gửi hồ sơ. |
-| **Yahoo Finance (`.VN`)** | Không dùng làm nguồn chính | Đã quan sát một trang mã Việt Nam hiển thị giá VND kèm nhãn tiền tệ USD, nên không đáng tin làm nguồn sự thật. |
+| **SSI FastConnect Data** | Nguồn đối chiếu (hoãn) | API chính thức; chưa dùng ở giai đoạn đầu (D5). |
 
-### 2.2 Cần xác minh về vnstock trước khi xây dựng
+### 2.2 Script probe
 
-Khi tra cứu ngày 2026-11-09:
+Cấu trúc dữ liệu của vnstock bản hiện tại chưa được xác nhận, nên bước đầu tiên là script probe (mục 8, Giai đoạn 0): chạy trên 1–2 mã và xác định:
 
-- Bản **3.2.4 trên PyPI bị quarantine** (không cài được) và trang liệt kê bản mới hơn **4.0.8**, nên tài liệu cũ có thể không còn khớp API hiện tại.
-- Tài liệu bản cũ **không nêu** các cột trả về, đơn vị giá (VND hay nghìn VND) và giới hạn tốc độ gọi.
+- phiên bản vnstock và nguồn bên dưới được dùng;
+- tên các cột trả về của dữ liệu giá;
+- đơn vị giá (VND hay nghìn VND);
+- giá đã điều chỉnh hay chưa;
+- thời gian phản hồi và giới hạn tốc độ gọi.
 
-**Cập nhật 2026-11-09:** thử cài từ môi trường phát triển cho thấy PyPI đánh dấu dự án `vnstock` ở trạng thái `quarantined` và không có tệp nào để tải, nên không chạy probe được từ đó. Cần cài từ nguồn khác (ví dụ GitHub của tác giả) hoặc chạy trên máy khác; xem D1.
-
-Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): chạy vnstock bản hiện tại trên 1–2 mã và ghi lại tên cột, đơn vị giá, thời gian phản hồi. Kết quả được điền vào mục 2.3.
-
-### 2.3 Kết quả probe (điền sau khi chạy)
-
-| Mục kiểm tra | Kết quả |
-|---|---|
-| Phiên bản vnstock | _chưa kiểm tra_ |
-| Tên các cột trả về của dữ liệu giá | _chưa kiểm tra_ |
-| Đơn vị giá (VND / nghìn VND) | _chưa kiểm tra_ |
-| Giá đã điều chỉnh hay chưa | _chưa kiểm tra_ |
-| Giới hạn tốc độ quan sát được | _chưa kiểm tra_ |
-| Nguồn bên dưới được dùng | _chưa kiểm tra_ |
+Kết quả quyết định cách viết adapter (mục 4.4) và thời gian chạy của cả universe.
 
 ---
 
@@ -124,8 +109,6 @@ Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): c
 | Log, tóm tắt | `data/logs/`, `data/last_run.json` |
 | Cấu hình | `config/` (universe, ngưỡng); không chứa bí mật |
 
-Thư mục `data/` không đưa vào git.
-
 **Ràng buộc của DuckDB cần tính trước:** một tệp DuckDB không cho tiến trình khác đọc trong lúc một tiến trình đang ghi. Vì vậy pipeline **không ghi thẳng vào tệp đang phục vụ** (xem mục 6.5), và MCP server mở tệp ở chế độ chỉ đọc, mỗi yêu cầu một kết nối ngắn rồi đóng.
 
 ---
@@ -142,13 +125,13 @@ Thư mục `data/` không đưa vào git.
 ### 4.2 Danh sách mã (universe)
 
 - Là **file cấu hình do người dùng quản lý** (ví dụ VN100 hoặc watchlist riêng), không lấy động từ API, để tập mã ổn định giữa các tuần.
+- Bắt đầu với **VN100**, lưu trong `config/universe.txt` (mẫu: `config/universe.example.txt`).
 - Thay đổi danh sách được ghi nhận qua bảng `symbols` (cột `in_universe`).
-- **Đã quyết định (D2):** bắt đầu với **VN100**, lưu trong file cấu hình `config/universe.txt` (mẫu: `config/universe.example.txt`).
 
 ### 4.3 Chiến lược lấy dữ liệu
 
 - Mỗi tuần **lấy lại toàn bộ lịch sử đã điều chỉnh** của mỗi mã, không chỉ nối thêm 5 phiên cuối. Lý do: khi có cổ tức hoặc chia tách, giá quá khứ bị điều chỉnh ngược; nối thêm sẽ gây lệch.
-- **Độ sâu lịch sử tối thiểu: 3 năm.** Lý do: trả chỉ báo `SMA200` cho khoảng `1Y` ở phía MCP tool cần ít nhất 200 phiên trước ngày bắt đầu khoảng (khoảng 450 phiên, ~2 năm); dư thêm để có đệm cho mã thiếu phiên.
+- **Độ sâu lịch sử tối thiểu: 3 năm.** `SMA200` cho khoảng `1Y` ở MCP tool cần khoảng 450 phiên (~2 năm); dư thêm để đệm cho mã thiếu phiên.
 - Gọi **tuần tự**, nghỉ giữa các lần gọi, thử lại có backoff khi lỗi tạm thời. Lỗi một mã không làm hỏng cả lần chạy.
 
 ### 4.4 Interface nguồn dữ liệu
@@ -182,10 +165,9 @@ Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy
 
 ### 4.7 Giám sát và thông báo
 
-- Mỗi lần chạy ghi một bản tóm tắt: số mã thành công/bị loại/lỗi, `as_of`, các cảnh báo, vào `data/last_run.json` và `data/logs/`.
-- Thất bại (trạng thái `failed`) gửi thông báo mức cao.
-- **Kênh thông báo (D6):** mặc định là log và `data/last_run.json` (không cần cấu hình). **Email qua SMTP là tùy chọn**: địa chỉ và mật khẩu ứng dụng đọc từ biến môi trường, không ghi vào repo. Vì chạy cục bộ không có ai giám sát, nên nên bật email cho trạng thái `failed`.
-- Kiểm tra độ tươi: `get_data_status` (xem `stock-mcp-tool.md`) cho biết `as_of` và thời điểm hoàn thành, để phát hiện khi lịch chạy hỏng âm thầm.
+- Mỗi lần chạy ghi bản tóm tắt (số mã thành công/bị loại/lỗi, `as_of`, cảnh báo) vào `data/last_run.json` và `data/logs/`.
+- Trạng thái `failed` gửi thông báo mức cao. Email qua SMTP là tùy chọn (địa chỉ và mật khẩu ứng dụng đọc từ biến môi trường, không ghi vào repo); mặc định chỉ có log và `last_run.json`.
+- `get_data_status` (xem `stock-mcp-tool.md`) cho biết `as_of` và thời điểm hoàn thành, để phát hiện lịch chạy hỏng âm thầm.
 
 ---
 
@@ -205,7 +187,7 @@ Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy
 | `ZERO_VOLUME_DAYS` | Nhiều phiên khối lượng bằng 0 | warn |
 | `SHORT_HISTORY` | Số phiên ít hơn mức cần cho chỉ báo dài nhất | warn |
 
-Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng **tạm giữ 15%** (mức rộng nhất, nên không báo sót; xem D8) (bằng biên độ lớn nhất của các sàn theo hiểu biết hiện tại: HOSE ±7%, HNX ±10%, UPCoM ±15%; **cần xác minh biên độ hiện hành**, D8). Mức `warn` vì giá chưa điều chỉnh đúng cho sự kiện doanh nghiệp cũng gây ra giá trị này, và cần người xem xét.
+Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng tạm là 15%, bằng biên độ lớn nhất của các sàn nên không báo sót (xem D8). Mức `warn` vì giá chưa điều chỉnh đúng cho sự kiện doanh nghiệp cũng gây ra giá trị này, và cần người xem xét.
 
 ### 5.2 Kiểm tra theo lần chạy
 
@@ -239,15 +221,14 @@ Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng **tạm giữ 15%** (mức rộng nh
 
 ### 6.2 Lớp raw
 
-Lưu dạng tệp Parquet trong thư mục cục bộ `data/raw/`, **không sửa, không xóa**. Nên sao lưu định kỳ (mục 9), vì đây là nơi duy nhất giữ các phiên bản giá điều chỉnh cũ.
+Lưu dạng tệp Parquet trong thư mục cục bộ `data/raw/`, **không sửa, không xóa**. Đây là nơi duy nhất giữ các phiên bản giá điều chỉnh cũ nên cần sao lưu (mục 9).
 
-- Đường dẫn gợi ý: `data/raw/prices/source=<nguồn>/run_date=<YYYY-MM-DD>/run_id=<id>/prices.<định dạng>`
+- Đường dẫn: `data/raw/prices/source=<nguồn>/run_date=<YYYY-MM-DD>/run_id=<id>/prices.parquet`
 - Nội dung: dữ liệu đúng như nguồn trả về, thêm hai cột `fetched_at` và `run_id`. Không đổi tên cột, không đổi đơn vị ở lớp này.
-- Định dạng: Parquet nén (D4).
 
 ### 6.3 Lớp curated
 
-Lưu trong tệp DuckDB. Kiểu `numeric` ở các bảng dưới ánh xạ sang `DECIMAL`/`DOUBLE` của DuckDB (chọn khi viết DDL ở `sql/`); các ràng buộc `CHECK` và khóa chính DuckDB đều hỗ trợ.
+Lưu trong tệp DuckDB. Kiểu `numeric` ánh xạ sang `DECIMAL`/`DOUBLE` (chọn khi viết DDL ở `sql/`).
 
 **`runs`** — mỗi lần chạy một dòng
 
@@ -335,51 +316,39 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 
 ---
 
-## 7. Các quyết định còn mở (phía pipeline)
+## 7. Điểm còn mở
 
-| Mã | Câu hỏi | Lựa chọn | Gợi ý | Trạng thái |
-|---|---|---|---|---|
-| D1 | API, cột và đơn vị giá của vnstock bản hiện tại là gì? | Chạy script probe | Làm đầu tiên (Giai đoạn 0) | **Mở, bị chặn:** PyPI `vnstock` đang quarantine, cần nguồn cài khác để probe |
-| D2 | Universe gồm những mã nào? | VN30 / VN100 / watchlist riêng | Bắt đầu nhỏ (VN30 hoặc watchlist), mở rộng sau | **Đã chốt: VN100** (xem hệ quả dưới bảng) |
-| D3 | Pipeline chạy ở đâu? | AWS / GitHub Actions / máy cá nhân | Chọn theo thời gian chạy sau khi probe | **Đã chốt: máy cá nhân**, scheduler của hệ điều hành. AWS bỏ khỏi phạm vi hiện tại (xem Giai đoạn 5) |
-| D4 | Lưu curated ở đâu, raw ở định dạng nào? | Postgres hoặc DuckDB; Parquet hoặc CSV nén | DuckDB nếu mọi thứ chạy cục bộ | **Đã chốt: DuckDB** (một tệp) cho curated; **Parquet** cục bộ cho raw |
-| D5 | Có nguồn đối chiếu thứ hai không? | SSI FastConnect / không | Có nếu bạn có hoặc sẵn sàng mở tài khoản SSI; nếu không, bỏ qua giai đoạn đầu | **Hoãn:** bỏ qua giai đoạn đầu (chưa có tài khoản SSI); xem lại ở Giai đoạn 3. `CROSS_SOURCE_MISMATCH` chưa bật |
-| D6 | Kênh thông báo kết quả chạy? | Email / Slack / khác | Chọn kênh bạn kiểm tra hằng ngày | **Đã chốt: log + `last_run.json` mặc định; email SMTP tùy chọn** |
-| D8 | Biên độ giá các sàn hiện hành (cho ngưỡng cảnh báo biến động ngày) | Xác minh theo quy định hiện hành | Xác minh trước khi hoàn thiện kiểm tra `LARGE_DAILY_MOVE` | **Mở, chưa xác minh được:** tra cứu 2026-11-09 cho HOSE ±7%, HNX ±10%, UPCoM ±15% (một nguồn ghi UPCoM 10%), không có nguồn chính thức nào xác nhận. Tạm dùng 15%; cần đối chiếu quy chế của HOSE/HNX |
-
-Hệ quả của các quyết định đã chốt:
-- **D2:** VN100 gồm khoảng 100 mã. Gọi tuần tự có nghỉ giữa các lần gọi; chạy cục bộ không có giới hạn thời gian như Lambda, nhưng vẫn cần đo thời gian ở Giai đoạn 0.
-- **D3:** phụ thuộc máy bật đúng giờ; có lịch chạy bù (mục 4.1).
-- **D4:** DuckDB không cho đọc đồng thời khi đang ghi, nên dùng tệp tạm và đổi tên (mục 3.1 và 6.5). Dữ liệu cỡ này (100 mã × vài năm ngày) nhỏ, sao chép tệp mỗi tuần không đáng kể.
-- **D6:** email cần thông tin đăng nhập SMTP nên để tùy chọn; mặc định không cần cấu hình gì.
-
-(D7 liên quan đến MCP server, xem `stock-mcp-tool.md`.)
+| Mã | Nội dung | Cách đóng |
+|---|---|---|
+| D1 | Cột, đơn vị giá, giới hạn tốc độ của vnstock | Chạy script probe (mục 2.2). PyPI hiện không cung cấp tệp của gói `vnstock` (trạng thái quarantined), cần nguồn cài khác |
+| D5 | Nguồn đối chiếu thứ hai | Hoãn đến Giai đoạn 3; khi đó mới bật `CROSS_SOURCE_MISMATCH` |
+| D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
 
 ---
 
 ## 8. Lộ trình (phần pipeline)
 
 **Giai đoạn 0 — Xác minh (nhỏ, làm trước)**
-- Viết và chạy script probe trên máy có mạng. Điền mục 2.3. Chốt D1.
+- Viết và chạy script probe (mục 2.2). Chốt D1.
 
 **Giai đoạn 1 — Pipeline giá**
 - Adapter vnstock, raw, validation, `prices_daily`, `runs`, `symbol_run_status`, `quality_issues`.
 - Chạy thủ công và kiểm tra bằng mắt trên một số mã.
-- Lên lịch hàng tuần bằng scheduler của hệ điều hành (kèm lịch chạy bù) và ghi kết quả chạy.
+- Lên lịch hàng tuần bằng scheduler của hệ điều hành, kèm lịch chạy bù.
 
 **Giai đoạn 2 — Chỉ báo và công bố nguyên tử**
-- Tính `features_daily`, công bố nguyên tử bằng tệp tạm và đổi tên theo mục 6.5.
-- (MCP tool ở giai đoạn này nằm trong `stock-mcp-tool.md`.)
+- Tính `features_daily`, công bố nguyên tử theo mục 6.5.
+- MCP tool ở giai đoạn này: xem `stock-mcp-tool.md`.
 
 **Giai đoạn 3 — Củng cố**
-- Nguồn đối chiếu (nếu D5 có), email SMTP cho lỗi, sao lưu `data/`, báo cáo chất lượng dữ liệu theo tuần.
+- Nguồn đối chiếu (D5), email SMTP cho lỗi, sao lưu `data/`, báo cáo chất lượng dữ liệu theo tuần.
 
 **Giai đoạn 4 — Mở rộng**
 - Báo cáo tài chính (cần lưu ngày công bố để tránh sai lệch nhìn trước khi backtest).
 - Backtest các tín hiệu; ghi lại mọi khuyến nghị của AI để đánh giá sau này.
 
 **Giai đoạn 5 — Tùy chọn: đưa lên máy chủ**
-- Chỉ làm khi cần dùng từ nhiều máy hoặc không muốn phụ thuộc máy cá nhân. Hướng: đổi DuckDB sang Postgres, raw sang object storage, scheduler sang dịch vụ đám mây, MCP sang HTTP có xác thực. Thiết kế hiện tại giữ các điểm này tách biệt (adapter `DataProvider`, schema ở mục 6, truy vấn tham số hóa) nên thay đổi nằm ở lớp lưu trữ và triển khai.
+- Khi cần dùng từ nhiều máy: DuckDB sang Postgres, raw sang object storage, scheduler sang dịch vụ đám mây, MCP sang HTTP có xác thực. Thay đổi nằm ở lớp lưu trữ và triển khai vì adapter `DataProvider`, schema (mục 6) và truy vấn tham số hóa đã tách riêng.
 
 ---
 
@@ -390,21 +359,6 @@ Hệ quả của các quyết định đã chốt:
 | vnstock thay đổi API hoặc nguồn bên dưới | Cô lập bằng adapter; ghi `provider_version` mỗi lần chạy; kiểm tra chất lượng sẽ bắt dữ liệu bất thường |
 | Sai đơn vị giá (nghìn VND so với VND) | Probe ở Giai đoạn 0; adapter chuẩn hóa về VND; ràng buộc và kiểm tra giá bất thường |
 | Giá điều chỉnh làm lệch quá khứ | Lấy lại toàn bộ lịch sử mỗi tuần; giữ raw để truy vết |
-| Điều khoản sử dụng nguồn dữ liệu | Dùng cá nhân; nếu mở rộng thành sản phẩm hoặc dùng trong tổ chức, xin phép tác giả/nhà cung cấp |
 | Run Thứ 6 thất bại mà không ai biết | Ghi `last_run.json`; email tùy chọn cho `failed`; `get_data_status` báo độ tươi; lần chạy dang dở không được công bố |
 | Máy tắt/ngủ đúng giờ chạy | Lịch chạy bù idempotent (mục 4.1) |
 | Mất hoặc hỏng tệp `data/` (đĩa hỏng, xóa nhầm) | Sao lưu `data/curated.duckdb` và `data/raw/` định kỳ ra ổ khác; curated dựng lại được từ raw nếu raw còn |
-| Đọc và ghi DuckDB xung đột | Pipeline ghi tệp tạm rồi đổi tên; bên đọc mở chỉ đọc, kết nối ngắn |
-| Quá tin tín hiệu từ dữ liệu giá công khai | Backtest nghiêm túc (tránh look-ahead và survivorship bias); xem AI là một đầu vào, không phải quyết định tự động |
-
----
-
-## 10. Tài liệu tham khảo
-
-- vnstock trên GitHub: https://github.com/thinh-vu/vnstock
-- vnstock trên PyPI (bản 3.2.4, đã bị quarantine; có bản mới hơn): https://pypi.org/project/vnstock/3.2.4/
-- SSI FastConnect Data: https://guide.ssi.com.vn/ssi-products/fastconnect-data
-- Đăng ký SSI Fast Connect API: https://www.ssi.com.vn/en/individual-customer/fast-connect-api
-- Tổng quan nguồn dữ liệu tài chính Việt Nam (Tidy Finance VN): https://mikenguyen13.github.io/tidy_finance_vn/01_accessing_and_managing_financial_data.html
-
-> Tài liệu này mô tả thiết kế, không phải tư vấn đầu tư.

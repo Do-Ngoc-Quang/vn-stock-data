@@ -1,8 +1,5 @@
 # Thiết kế: MCP tool truy vấn dữ liệu giao dịch cho AI agent
 
-- **Trạng thái:** Bản nháp thiết kế (chưa có code)
-- **Phạm vi triển khai:** chạy cục bộ trên máy cá nhân; MCP server là tiến trình stdio do ứng dụng agent khởi chạy
-- **Ngày:** 2026-11-09
 - **Tài liệu liên quan:** `stock-pipeline-collection.md` (pipeline thu thập dữ liệu hàng tuần). MCP tool **chỉ đọc** các bảng do pipeline tạo ra, theo schema ở mục 6 của tài liệu đó.
 
 ---
@@ -24,7 +21,7 @@ Cho phép AI agent truy vấn dữ liệu giao dịch cổ phiếu Việt Nam tr
 - Dữ liệu trong phiên, streaming.
 - Ghi dữ liệu, đặt lệnh hoặc giao dịch tự động.
 - Tính chỉ báo theo yêu cầu với chu kỳ tùy ý.
-- Đưa ra lời khuyên đầu tư. Tool chỉ cung cấp dữ liệu.
+- Tool tra cứu tổng hợp nhiều mã (ví dụ xếp hạng theo thay đổi giá): hoãn đến Giai đoạn 4, quyết định dựa trên log sử dụng thực tế.
 
 ---
 
@@ -109,7 +106,7 @@ Preset giúp agent không phải tự tính ngày, và gắn với mục đích 
 1. **Mốc kết thúc mặc định là `as_of`** (phiên mới nhất trong dữ liệu), không phải ngày hôm nay. Dữ liệu cập nhật hàng tuần nên neo vào "hôm nay" có thể cho khoảng trống.
 2. Khoảng tùy chỉnh phải dài **từ 7 đến 365 ngày**. Ngoài khoảng này: từ chối, không tự cắt ngầm.
 3. Không cho phép ngày tương lai; `start_date` không được sau `end_date`.
-4. Tối đa **10 mã** mỗi lần gọi và tối đa **3.000 dòng** kết quả (đề xuất; điều chỉnh khi có dữ liệu sử dụng thực tế).
+4. Tối đa **10 mã** mỗi lần gọi và tối đa **3.000 dòng** kết quả (giá trị khởi đầu, chỉnh theo kích thước kết quả thực tế).
 5. Chỉ báo hoặc mã không hợp lệ: từ chối và liệt kê giá trị hợp lệ.
 
 ### 4.4 Hành vi khi `interval = 1W`
@@ -157,8 +154,6 @@ Dạng bảng gọn để tiết kiệm ngữ cảnh của agent.
 }
 ```
 
-(Các giá trị `0` và ngày trên chỉ minh họa cấu trúc, không phải dữ liệu thật.)
-
 Giải thích:
 - `summary` do code tính: agent không cần tự tính các số này.
 - `requested_range` và `actual_range` khác nhau khi mã mới niêm yết hoặc thiếu phiên.
@@ -199,32 +194,17 @@ Khuyến nghị agent gọi tool này trước khi truy vấn lần đầu trong
 
 ## 7. Triển khai và bảo mật
 
-- **Đã quyết định (D7):** MCP server chạy **cục bộ** qua **stdio**, do ứng dụng agent trên cùng máy khởi chạy. Không mở cổng mạng nên không cần xác thực; bảo vệ dựa vào quyền truy cập tệp của hệ điều hành.
-- Đường dẫn tệp DB lấy từ cấu hình hoặc biến môi trường, không đưa vào mô tả tool hay kết quả trả về.
-- Mở `data/curated.duckdb` ở chế độ chỉ đọc, **mỗi yêu cầu một kết nối ngắn rồi đóng**, để pipeline đổi tên tệp khi công bố (xem `stock-pipeline-collection.md`, mục 6.5). Nếu tệp đang được thay trong khoảnh khắc đó, thử lại ngắn rồi mới báo lỗi.
-- Quyền truy cập dữ liệu: chỉ đọc, trên các bảng liệt kê ở mục 2.1.
+- MCP server chạy **cục bộ qua stdio**, do ứng dụng agent trên cùng máy khởi chạy. Không mở cổng mạng nên không cần xác thực.
+- Mở `data/curated.duckdb` ở chế độ chỉ đọc, **mỗi yêu cầu một kết nối ngắn rồi đóng**, để pipeline đổi tên tệp khi công bố (`stock-pipeline-collection.md`, mục 6.5). Nếu tệp đang được thay, thử lại ngắn rồi mới báo lỗi.
 - Truy vấn tham số hóa; không nối chuỗi từ đầu vào của agent.
 - Đánh dấu cả hai tool là chỉ đọc trong mô tả MCP.
-- Giới hạn số lần gọi mỗi phút chỉ là tùy chọn (một người dùng, cục bộ); ưu tiên giới hạn dòng và số mã để bảo vệ ngữ cảnh của agent.
-- Log yêu cầu (tham số, thời gian, kết quả/lỗi) phục vụ gỡ lỗi.
-- Không đưa khóa API hay thông tin kết nối cơ sở dữ liệu vào mô tả tool hay kết quả trả về.
-- Nội dung từ cơ sở dữ liệu trả về chỉ gồm số liệu và mã; không chứa văn bản tự do do bên ngoài kiểm soát (tránh đường vào cho chỉ dẫn độc hại tới agent). Trường `detail` trong `quality_issues` khi đưa vào cảnh báo chỉ dùng chuỗi do pipeline tự sinh.
+- Log yêu cầu (tham số, thời gian, kết quả/lỗi) phục vụ gỡ lỗi. Giới hạn số lần gọi mỗi phút là tùy chọn.
+- Đường dẫn tệp DB lấy từ cấu hình hoặc biến môi trường, không đưa vào mô tả tool hay kết quả trả về.
+- Nội dung trả về chỉ gồm số liệu và mã; không chứa văn bản tự do do bên ngoài kiểm soát (tránh đường vào cho chỉ dẫn độc hại tới agent). Trường `detail` trong `quality_issues` khi đưa vào cảnh báo chỉ dùng chuỗi do pipeline tự sinh.
 
 ---
 
-## 8. Các quyết định còn mở (phía MCP tool)
-
-| Mã | Câu hỏi | Lựa chọn | Gợi ý | Trạng thái |
-|---|---|---|---|---|
-| D7 | MCP server chạy ở đâu và xác thực thế nào? | Cục bộ (stdio) / từ xa (HTTP) | Cục bộ nếu chỉ dùng cá nhân; từ xa cần xác thực | **Đã chốt: cục bộ (stdio)**, không cần xác thực. Từ xa để Giai đoạn 5 của pipeline |
-| D9 | Các giới hạn: 10 mã, 3.000 dòng, tốc độ gọi mỗi phút | Giữ đề xuất hoặc điều chỉnh | Giữ đề xuất, đo lại sau khi dùng thực tế | **Đã chốt: giữ 10 mã và 3.000 dòng**; giới hạn tốc độ gọi bỏ khỏi mặc định (tùy chọn). Đo lại ở Giai đoạn 3 |
-| D10 | Có cần thêm tool tra cứu tổng hợp nhiều mã (ví dụ xếp hạng theo thay đổi giá) | Thêm sau / không | Hoãn; đợi xem agent thực tế cần gì | **Đã chốt: hoãn** đến Giai đoạn 4, quyết định dựa trên log sử dụng thực tế. Lưu ý universe VN100 làm nhu cầu này nhiều khả năng xuất hiện |
-
-(D1–D6 và D8 thuộc phía pipeline, xem `stock-pipeline-collection.md`.)
-
----
-
-## 9. Lộ trình (phần MCP tool)
+## 8. Lộ trình (phần MCP tool)
 
 Dùng chung đánh số giai đoạn với tài liệu pipeline.
 
@@ -234,14 +214,14 @@ Dùng chung đánh số giai đoạn với tài liệu pipeline.
 - Kiểm tra chéo: một số giá trị chỉ báo trả về so với tính độc lập bằng công cụ khác.
 
 **Giai đoạn 3 — Củng cố**
-- Log yêu cầu, đo kích thước kết quả thực tế để chỉnh D9; giới hạn tốc độ nếu cần.
+- Log yêu cầu, đo kích thước kết quả thực tế để chỉnh giới hạn mục 4.3; giới hạn tốc độ nếu cần.
 
 **Giai đoạn 4 — Mở rộng**
-- Thêm tool/dữ liệu cho báo cáo tài chính khi pipeline có. Cân nhắc D10.
+- Thêm tool/dữ liệu cho báo cáo tài chính khi pipeline có. Cân nhắc tool tổng hợp nhiều mã.
 
 ---
 
-## 10. Rủi ro đã biết
+## 9. Rủi ro đã biết
 
 | Rủi ro | Giảm thiểu |
 |---|---|
@@ -250,8 +230,3 @@ Dùng chung đánh số giai đoạn với tài liệu pipeline.
 | Kết quả quá lớn làm tràn ngữ cảnh | Giới hạn số mã và số dòng; dạng bảng gọn; gợi ý `interval = 1W` |
 | Agent coi null là 0 hoặc bỏ qua cảnh báo | Null giữ nguyên là null; cảnh báo nêu rõ chỉ báo và ngày bắt đầu có giá trị |
 | Agent đọc dữ liệu cũ mà không biết | Mọi kết quả kèm `as_of`; `get_data_status` cho biết lần chạy mới nhất có thất bại không |
-| Quá tin tín hiệu từ dữ liệu giá công khai | Xem kết quả là một đầu vào cho quyết định của người dùng, không phải tín hiệu tự động |
-
----
-
-> Tài liệu này mô tả thiết kế, không phải tư vấn đầu tư.

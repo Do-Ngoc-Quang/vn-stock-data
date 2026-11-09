@@ -2,7 +2,7 @@
 
 Dữ liệu giao dịch cổ phiếu Việt Nam (EOD, cập nhật hàng tuần) cho AI agent truy vấn qua MCP tool.
 
-> Trạng thái: **bản nháp thiết kế, chưa có code.** Không phải tư vấn đầu tư.
+> Trạng thái: bản nháp thiết kế, chưa có code.
 >
 > Toàn bộ chạy **cục bộ**: scheduler của hệ điều hành → pipeline Python → DuckDB + Parquet → MCP server stdio. Chưa dùng đám mây.
 
