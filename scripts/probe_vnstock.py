@@ -2,14 +2,13 @@
 
 Chạy trên máy có mạng và đã cài vnstock:
 
-    python scripts/probe_vnstock.py --symbols FPT VCB --sources VCI TCBS
+    python scripts/probe_vnstock.py --symbols FPT VCB --sources VCI KBS VND
 
 Kết quả: in bảng markdown để điền vào tài liệu và ghi data/probe/report.json.
 Script chỉ đọc dữ liệu, không ghi vào curated.
 
-Giới hạn: script thử API của vnstock thế hệ <= 5 (Vnstock().stock(...).quote.history)
-và hàm cũ stock_historical_data. Nếu thư viện thế hệ 6 có giao diện khác, các lần thử
-ghi lỗi vào báo cáo; khi đó sửa hàm `fetch_history` theo tài liệu thế hệ 6.
+Script thử API Market của vnstock 5 và các API cũ hơn; lỗi của từng cách gọi được
+ghi lại nếu không lấy được dữ liệu.
 """
 from __future__ import annotations
 
@@ -33,6 +32,15 @@ def library_version() -> str | None:
 def fetch_history(symbol: str, source: str, start: str, end: str):
     """Trả về (DataFrame, tên cách gọi đã dùng). Ném ngoại lệ nếu mọi cách đều lỗi."""
     errors = []
+    try:
+        from vnstock import Market
+
+        df = Market().equity(symbol).ohlcv(
+            start=start, end=end, interval="1D", source=source
+        )
+        return df, "Market().equity(...).ohlcv"
+    except Exception as exc:  # noqa: BLE001 - probe cần ghi lại mọi lỗi
+        errors.append(f"Market().equity(...).ohlcv: {type(exc).__name__}: {exc}")
     try:
         from vnstock import Vnstock
 
@@ -140,7 +148,7 @@ def render_markdown(version: str | None, results: list[dict]) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--symbols", nargs="+", default=["FPT", "VCB"])
-    ap.add_argument("--sources", nargs="+", default=["VCI", "TCBS"])
+    ap.add_argument("--sources", nargs="+", default=["VCI", "KBS", "VND"])
     ap.add_argument("--days", type=int, default=45, help="độ dài khoảng lấy thử (ngày)")
     ap.add_argument("--calls", type=int, default=5, help="số lần gọi liên tiếp mỗi cặp, để đo độ trễ và giới hạn")
     ap.add_argument("--out", default="data/probe/report.json")

@@ -1,0 +1,219 @@
+{
+  "run_at": "2026-11-09T15:22:32+0700",
+  "vnstock_version": "5.2.2",
+  "results": [
+    {
+      "symbol": "FPT",
+      "source": "VCI",
+      "start": "2026-09-25",
+      "end": "2026-11-09",
+      "call_style": "Market().equity(...).ohlcv",
+      "calls": 5,
+      "failures": [],
+      "latency_s": {
+        "min": 0.065,
+        "median": 0.071,
+        "max": 1.275
+      },
+      "columns": [
+        "time",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "dtypes": {
+        "time": "datetime64[ns, Asia/Ho_Chi_Minh]",
+        "open": "float64",
+        "high": "float64",
+        "low": "float64",
+        "close": "float64",
+        "volume": "int64"
+      },
+      "row_count": 32,
+      "index_name": "None",
+      "close_median": 57.25,
+      "close_first": 64.7,
+      "close_last": 51.0,
+      "head": [
+        {
+          "time": "2026-09-25T00:00:00.000Z",
+          "open": 65.5,
+          "high": 65.9,
+          "low": 64.6,
+          "close": 64.7,
+          "volume": 3568808
+        },
+        {
+          "time": "2026-09-28T00:00:00.000Z",
+          "open": 64.7,
+          "high": 64.8,
+          "low": 63.0,
+          "close": 63.7,
+          "volume": 5185502
+        }
+      ],
+      "tail": [
+        {
+          "time": "2026-11-06T00:00:00.000Z",
+          "open": 51.4,
+          "high": 51.8,
+          "low": 50.8,
+          "close": 50.8,
+          "volume": 12162200
+        },
+        {
+          "time": "2026-11-09T00:00:00.000Z",
+          "open": 51.3,
+          "high": 51.6,
+          "low": 50.6,
+          "close": 51.0,
+          "volume": 5362500
+        }
+      ],
+      "unit_hint": "có thể là nghìn VND (trung vị close < 1000)"
+    },
+    {
+      "symbol": "VCB",
+      "source": "VCI",
+      "start": "2026-09-25",
+      "end": "2026-11-09",
+      "call_style": "Market().equity(...).ohlcv",
+      "calls": 5,
+      "failures": [],
+      "latency_s": {
+        "min": 0.071,
+        "median": 0.078,
+        "max": 0.091
+      },
+      "columns": [
+        "time",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "dtypes": {
+        "time": "datetime64[ns, Asia/Ho_Chi_Minh]",
+        "open": "float64",
+        "high": "float64",
+        "low": "float64",
+        "close": "float64",
+        "volume": "int64"
+      },
+      "row_count": 32,
+      "index_name": "None",
+      "close_median": 56.55,
+      "close_first": 58.0,
+      "close_last": 53.6,
+      "head": [
+        {
+          "time": "2026-09-25T00:00:00.000Z",
+          "open": 58.2,
+          "high": 58.5,
+          "low": 57.7,
+          "close": 58.0,
+          "volume": 4390100
+        },
+        {
+          "time": "2026-09-28T00:00:00.000Z",
+          "open": 58.0,
+          "high": 58.4,
+          "low": 57.6,
+          "close": 58.3,
+          "volume": 3824000
+        }
+      ],
+      "tail": [
+        {
+          "time": "2026-11-06T00:00:00.000Z",
+          "open": 53.5,
+          "high": 53.9,
+          "low": 53.3,
+          "close": 53.6,
+          "volume": 5202300
+        },
+        {
+          "time": "2026-11-09T00:00:00.000Z",
+          "open": 53.9,
+          "high": 54.2,
+          "low": 53.4,
+          "close": 53.6,
+          "volume": 2985600
+        }
+      ],
+      "unit_hint": "có thể là nghìn VND (trung vị close < 1000)"
+    },
+    {
+      "symbol": "FPT",
+      "source": "TCBS",
+      "start": "2026-09-25",
+      "end": "2026-11-09",
+      "calls": 5,
+      "failures": [
+        {
+          "call": 1,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 2,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 3,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 4,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 5,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        }
+      ],
+      "latency_s": {
+        "min": 0.001,
+        "median": 0.001,
+        "max": 0.006
+      }
+    },
+    {
+      "symbol": "VCB",
+      "source": "TCBS",
+      "start": "2026-09-25",
+      "end": "2026-11-09",
+      "calls": 5,
+      "failures": [
+        {
+          "call": 1,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 2,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 3,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 4,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        },
+        {
+          "call": 5,
+          "error": "RuntimeError: Market().equity(...).ohlcv: UnsupportedError: Nguồn 'tcbs' không phục vụ market.equity.ohlcv. Nguồn dùng được: 'vci', 'asean', 'mas', 'kbs', 'vnd'.\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví dụ Market().equity('FPT').ohlcv(). | stock_historical_data: ImportError: cannot import name 'stock_historical_data' from 'vnstock' (<venv>\\Lib\\site-packages\\vnstock\\__init__.py)"
+        }
+      ],
+      "latency_s": {
+        "min": 0.001,
+        "median": 0.001,
+        "max": 0.002
+      }
+    }
+  ],
+  "manual_adjusted_check": "Chọn một mã đã có chia tách hoặc trả cổ tức bằng cổ phiếu trong vài năm gần đây. Lấy giá quanh ngày giao dịch không hưởng quyền: nếu giá liền kề ngày đó liên tục (không có bước nhảy tương ứng tỷ lệ chia) thì giá đã điều chỉnh."
+}

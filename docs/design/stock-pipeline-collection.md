@@ -44,25 +44,34 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 
 Nguồn duy nhất là **vnstock** (Python). Thư viện lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi; vì vậy mọi lời gọi nằm sau adapter (mục 4.4).
 
-### 2.2 Script probe
+### 2.2 Script probe và kết quả
 
-Cấu trúc dữ liệu của vnstock bản hiện tại chưa được xác nhận, nên bước đầu tiên là script probe (mục 8, Giai đoạn 0): chạy trên 1–2 mã và xác định:
+Script `scripts/probe_vnstock.py` gọi vnstock trên một vài mã và ghi báo cáo vào `data/probe/report.json`. Bản báo cáo lần chạy đầu được lưu ở `docs/probe/vnstock-5.2.2-2026-11-09.json`.
 
-- phiên bản vnstock và nguồn bên dưới được dùng;
-- tên các cột trả về của dữ liệu giá;
-- đơn vị giá (VND hay nghìn VND);
-- giá đã điều chỉnh hay chưa;
-- thời gian phản hồi và giới hạn tốc độ gọi.
+**Kết quả lần 1** (vnstock 5.2.2, chạy 2026-11-09 lúc 15:22 giờ Việt Nam, mã FPT và VCB):
 
-Kết quả quyết định cách viết adapter (mục 4.4) và thời gian chạy của cả universe. Script: `scripts/probe_vnstock.py`; báo cáo ghi ở `data/probe/report.json`.
+| Mục kiểm tra | Kết quả |
+|---|---|
+| Phiên bản vnstock | 5.2.2 |
+| Cách gọi | `Market().equity(symbol).ohlcv(start, end, interval="1D", source=...)`. Lớp `Vnstock()` và hàm `stock_historical_data` đã bị bỏ |
+| Nguồn hỗ trợ `ohlcv` | `vci`, `asean`, `mas`, `kbs`, `vnd`. `tcbs` không hỗ trợ |
+| Nguồn đã chạy thành công | `vci` (32 dòng cho khoảng 45 ngày, cả FPT lẫn VCB) |
+| Cột trả về | `time, open, high, low, close, volume` |
+| Kiểu dữ liệu | `time`: datetime có múi giờ `Asia/Ho_Chi_Minh`; giá: float64; `volume`: int64 |
+| Đơn vị giá | Rất có khả năng là **nghìn VND**: `close` FPT 51.0, VCB 53.6; giá có một chữ số thập phân. Chờ xác nhận bằng cách so với bảng giá cùng ngày |
+| Giá đã điều chỉnh | Chưa kiểm tra |
+| Thời gian phản hồi | Trung vị khoảng 0,07–0,08 giây; lần đầu tới 1,3 giây; 5 lần liên tiếp không lỗi |
+| Giới hạn tốc độ | Chưa quan sát được (mới 5 lần gọi) |
+| Dòng của ngày chạy | Có dòng 2026-11-09 khi chạy sau 15:00 |
 
-Theo README của kho GitHub tác giả (chưa xác minh trực tiếp), vnstock đã chuyển sang **thế hệ 6**, nên probe phải trả lời thêm:
+**Còn lại của D1:**
+- xác nhận đơn vị giá với bảng giá thực tế;
+- kiểm tra giá đã điều chỉnh (hướng dẫn thủ công có trong báo cáo);
+- đo giới hạn tốc độ bằng nhiều lần gọi hơn, trên cả universe;
+- thử các nguồn khác (`kbs`, `vnd`) để biết nguồn nào ổn định nhất;
+- vnstock thế hệ 6: theo README của kho GitHub tác giả (chưa xác minh trực tiếp), các phiên bản trước thế hệ 6 ngừng hoạt động từ 2026-11-10 và thế hệ 6 yêu cầu người dùng dùng khóa của nguồn. Phải chạy lại probe trên thế hệ 6 và xác định có cần khóa không (khóa nếu có đưa vào bằng biến môi trường, không ghi vào repo hay image).
 
-- các phiên bản trước thế hệ 6 ngừng hoạt động từ 2026-11-10; gói trên PyPI không dùng được (quarantined, hoặc là bản cũ như `vnstock3`);
-- thế hệ 6 được phát hành qua kho phân phối riêng của Vnstock, không qua PyPI;
-- người dùng tự chọn nguồn và dùng khóa của chính mình. Cần xác định có nguồn nào không cần khóa, và khóa (nếu có) đưa vào bằng biến môi trường, không ghi vào repo hay image.
-
-Nếu thế hệ 6 không dùng được miễn phí hoặc không chạy được cục bộ, nguồn dữ liệu phải chọn lại. Adapter (mục 4.4) giữ cho thay đổi này không lan ra phần còn lại.
+Nếu thế hệ 6 không dùng được như thế hệ 5, nguồn dữ liệu phải chọn lại. Adapter (mục 4.4) giữ cho thay đổi này không lan ra phần còn lại.
 
 ---
 
@@ -166,7 +175,7 @@ Hợp đồng của `DataProvider` (mô tả, không phải code):
 
 - Đầu vào: mã, ngày bắt đầu, ngày kết thúc.
 - Đầu ra: bảng có các cột chuẩn `symbol, trade_date, open, high, low, close, volume`; giá đơn vị **VND**; giá đã điều chỉnh.
-- Adapter chịu trách nhiệm đổi tên cột và đổi đơn vị về chuẩn. Nếu nguồn trả về nghìn VND thì adapter nhân lên.
+- Adapter chịu trách nhiệm đổi tên cột và đổi đơn vị về chuẩn. Theo probe (mục 2.2), vnstock 5.2.2 trả cột `time` thay cho `trade_date` và giá theo nghìn VND, nên adapter lấy **ngày theo múi giờ `Asia/Ho_Chi_Minh` của `time`** (không quy đổi sang UTC, tránh lệch một ngày) và nhân giá với 1000.
 - Lỗi được báo bằng ngoại lệ có phân loại: tạm thời (thử lại được) hoặc vĩnh viễn (ví dụ mã không tồn tại).
 
 ### 4.5 Luồng một lần chạy
@@ -343,7 +352,7 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 
 | Mã | Nội dung | Cách đóng |
 |---|---|---|
-| D1 | Cột, đơn vị giá, giới hạn tốc độ của vnstock; cách cài và yêu cầu khóa của thế hệ 6 | Chạy `scripts/probe_vnstock.py` trên máy có mạng (mục 2.2). Từ môi trường phát triển hiện tại không chạy được: các máy chủ dữ liệu bị chặn và gói `vnstock` trên PyPI bị quarantine |
+| D1 | Xác minh vnstock | **Đã đóng một phần.** Đã biết cách gọi, cột, kiểu, độ trễ (mục 2.2). Còn: xác nhận đơn vị, giá điều chỉnh, giới hạn tốc độ, và thế hệ 6 / yêu cầu khóa |
 | D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
 
 ---
