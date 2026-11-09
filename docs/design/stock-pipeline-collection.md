@@ -62,12 +62,11 @@ Script `scripts/probe_vnstock.py` gọi vnstock trên một vài mã và ghi bá
 | Giá đã điều chỉnh | **Có điều chỉnh ở mức nhỏ, chưa chứng minh được với thưởng/chia tách lớn.** 10 mã HOSE (FPT, VNM, HPG, MWG, SSI, REE, PNJ, VCB, VIC, MSN), 1 năm dữ liệu: không có bước nhảy nào vượt biên độ 7%. VCI và KBS lệch nhau tối đa 0,16% ở ngày cũ, và độ lệch đổi mức tại một ngày cụ thể ở 5 mã (VNM 2026-06-22, SSI 2026-08-11, REE 2026-05-14, PNJ 2026-04-17, VCB 2026-07-20), dấu hiệu của sự kiện doanh nghiệp được một nguồn điều chỉnh còn nguồn kia thì không. Chiều lệch không nhất quán: VCI thấp hơn KBS ở VNM, SSI, VCB, cao hơn ở REE, PNJ; vậy không nguồn nào điều chỉnh đầy đủ hơn hẳn. Cần đối chiếu các ngày trên với ngày giao dịch không hưởng quyền |
 | Thời gian phản hồi | Trung vị khoảng 0,07–0,08 giây; lần đầu tới 1,3 giây; 5 lần liên tiếp không lỗi |
 | Giới hạn tốc độ | **10 lượt gọi mỗi phút.** Lượt thứ 11 trả `EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)`. Hạn mức chung cho các nguồn (VCI và KBS cùng cạn). Chưa biết có hạn mức theo ngày không |
-| Độ sâu lịch sử | Yêu cầu 5 năm nhưng chỉ nhận **248 dòng, từ 2025-11-10** (đúng 1 năm), ở cả VCI lẫn KBS. Chưa rõ do hạn mức theo gói hay do giới hạn của từng lần gọi (xem D11) |
+| Độ sâu lịch sử | **Mỗi lần gọi chỉ trả tối đa khoảng 1 năm (248–250 dòng)**: yêu cầu 5 năm chỉ nhận 248 dòng gần nhất. Nhưng gọi theo từng cửa sổ 1 năm thì lấy được ít nhất 5 năm (FPT/VCI: 2021-11-11 đến 2026-11-09, 5 cửa sổ đều 248–250 dòng). Pipeline phải ghép nhiều cửa sổ (D11 đã đóng) |
 | Dòng của ngày chạy | Có dòng 2026-11-09 khi chạy sau 15:00 |
 
 **Còn lại của D1:**
 - đối chiếu 5 ngày đổi mức ở trên với ngày giao dịch không hưởng quyền thực tế, và kiểm tra thưởng/chia tách lớn khi có nhiều năm dữ liệu (cần D11);
-- xác định độ sâu lịch sử khả dụng (D11) bằng `scripts/check_history_depth.py`;
 - thử các nguồn khác (`kbs`, `vnd`) để biết nguồn nào ổn định nhất;
 - vnstock thế hệ 6: theo README của kho GitHub tác giả (chưa xác minh trực tiếp), các phiên bản trước thế hệ 6 ngừng hoạt động từ 2026-11-10 và thế hệ 6 yêu cầu người dùng dùng khóa của nguồn. Phải chạy lại probe trên thế hệ 6 và xác định có cần khóa không (khóa nếu có đưa vào bằng biến môi trường, không ghi vào repo hay image).
 
@@ -164,9 +163,9 @@ Quy tắc:
 ### 4.3 Chiến lược lấy dữ liệu
 
 - Mỗi lần chạy **lấy lại toàn bộ lịch sử đã điều chỉnh** của mỗi mã, không chỉ nối thêm 5 phiên cuối. Lý do: khi có cổ tức hoặc chia tách, giá quá khứ bị điều chỉnh ngược; nối thêm sẽ gây lệch.
-- **Độ sâu lịch sử tối thiểu: 3 năm** (chưa chắc đạt được với quyền hiện tại, xem D11). `SMA200` cho khoảng `1Y` ở MCP tool cần khoảng 450 phiên (~2 năm); dư thêm để đệm cho mã thiếu phiên.
+- **Độ sâu lịch sử tối thiểu: 3 năm.** Mỗi lần gọi chỉ trả tối đa khoảng 1 năm, nên adapter chia khoảng thành **các cửa sổ 1 năm** (3 lượt gọi cho mỗi mã), rồi ghép, bỏ trùng ngày và sắp theo ngày. Cửa sổ lỗi thì cả mã được tính là lỗi (không ghi lịch sử thiếu đoạn). `SMA200` cho khoảng `1Y` ở MCP tool cần khoảng 450 phiên (~2 năm); dư thêm để đệm cho mã thiếu phiên.
 - Gọi **tuần tự**, nghỉ giữa các lần gọi, thử lại có backoff khi lỗi tạm thời. Lỗi một mã không làm hỏng cả lần chạy.
-- **Hạn mức 10 lượt gọi mỗi phút** (mục 2.2): pipeline giữ nhịp tối đa 8 lượt/phút (nghỉ khoảng 7,5 giây giữa các lần gọi) để chừa đệm. Một lượt cho một mã, nên VN100 cần ít nhất khoảng 13 phút; thời gian này là chấp nhận được vì lệnh do người dùng chạy tay. Lỗi vượt hạn mức (`EntitlementError`) là lỗi tạm thời: chờ hết phút rồi thử lại, không tính là lỗi của mã.
+- **Hạn mức 10 lượt gọi mỗi phút** (mục 2.2): pipeline giữ nhịp tối đa 8 lượt/phút (nghỉ khoảng 7,5 giây giữa các lần gọi) để chừa đệm. Mỗi mã cần 3 lượt (3 cửa sổ năm), nên VN100 cần 300 lượt, khoảng 38 phút; thời gian này là chấp nhận được vì lệnh do người dùng chạy tay. Lỗi vượt hạn mức (`EntitlementError`) là lỗi tạm thời: chờ hết phút rồi thử lại, không tính là lỗi của mã.
 
 ### 4.4 Interface nguồn dữ liệu
 
@@ -355,7 +354,7 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 | Mã | Nội dung | Cách đóng |
 |---|---|---|
 | D1 | Xác minh vnstock | **Đã đóng một phần.** Đã biết cách gọi, cột, kiểu, đơn vị giá, độ trễ, giới hạn 10 lượt/phút, mức độ điều chỉnh giá (mục 2.2). Còn: kiểm tra thưởng/chia tách lớn (cần D11) và thế hệ 6 / yêu cầu khóa |
-| D11 | Độ sâu lịch sử khả dụng. Thiết kế cần 3 năm (mục 4.3) nhưng probe chỉ nhận về 1 năm (248 phiên) | Chạy `scripts/check_history_depth.py`; nếu chỉ có 1 năm thì chọn: ghép nhiều lần gọi theo cửa sổ nếu nguồn cho phép lấy từng cửa sổ cũ, nâng quyền truy cập, hoặc đổi nguồn. Nếu không có cách nào, `SMA200` chỉ có giá trị cho khoảng 50 phiên cuối và các khoảng truy vấn dài hơn phải ghi cảnh báo `null` theo mục 4.5 của tài liệu MCP |
+| D11 | Độ sâu lịch sử khả dụng | **Đã đóng.** Mỗi lần gọi trả tối đa ~1 năm nhưng gọi theo cửa sổ năm lấy được ≥ 5 năm (mục 2.2). Adapter ghép 3 cửa sổ/mã (mục 4.3) |
 | D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
 
 ---
@@ -388,7 +387,7 @@ Bốn giai đoạn, mỗi giai đoạn có điều kiện hoàn thành. Hoàn th
 | Rủi ro | Giảm thiểu |
 |---|---|
 | vnstock thay đổi API hoặc nguồn bên dưới | Cô lập bằng adapter; ghi `provider_version` mỗi lần chạy; kiểm tra chất lượng sẽ bắt dữ liệu bất thường |
-| Hạn mức gọi API và độ sâu lịch sử bị giới hạn theo quyền truy cập | Giữ nhịp gọi dưới 10 lượt/phút; coi lỗi vượt hạn mức là tạm thời; D11 xác định độ sâu thực tế trước khi viết phần tính chỉ báo |
+| Hạn mức gọi API và độ sâu lịch sử bị giới hạn theo quyền truy cập | Giữ nhịp gọi dưới 10 lượt/phút; coi lỗi vượt hạn mức là tạm thời; lấy lịch sử bằng các cửa sổ 1 năm vì mỗi lần gọi chỉ trả ~1 năm |
 | Sai đơn vị giá (nghìn VND so với VND) | Probe ở Giai đoạn 0; adapter chuẩn hóa về VND; ràng buộc và kiểm tra giá bất thường |
 | Giá điều chỉnh làm lệch quá khứ | Lấy lại toàn bộ lịch sử mỗi lần chạy; giữ raw để truy vết |
 | Quên chạy hoặc lần chạy thất bại mà không để ý | `get_data_status` báo `as_of`, thời điểm hoàn thành và trạng thái lần chạy gần nhất; `STALE_DATA`; lần chạy dang dở không được công bố |
