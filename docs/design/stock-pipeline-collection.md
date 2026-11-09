@@ -42,7 +42,7 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 
 ### 2.1 Lựa chọn
 
-Nguồn duy nhất là **vnstock** (Python, miễn phí). Thư viện lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi; vì vậy mọi lời gọi nằm sau adapter (mục 4.4).
+Nguồn duy nhất là **vnstock** (Python). Thư viện lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi; vì vậy mọi lời gọi nằm sau adapter (mục 4.4).
 
 ### 2.2 Script probe
 
@@ -54,7 +54,15 @@ Cấu trúc dữ liệu của vnstock bản hiện tại chưa được xác nh�
 - giá đã điều chỉnh hay chưa;
 - thời gian phản hồi và giới hạn tốc độ gọi.
 
-Kết quả quyết định cách viết adapter (mục 4.4) và thời gian chạy của cả universe.
+Kết quả quyết định cách viết adapter (mục 4.4) và thời gian chạy của cả universe. Script: `scripts/probe_vnstock.py`; báo cáo ghi ở `data/probe/report.json`.
+
+Theo README của kho GitHub tác giả (chưa xác minh trực tiếp), vnstock đã chuyển sang **thế hệ 6**, nên probe phải trả lời thêm:
+
+- các phiên bản trước thế hệ 6 ngừng hoạt động từ 2026-11-10; gói trên PyPI không dùng được (quarantined, hoặc là bản cũ như `vnstock3`);
+- thế hệ 6 được phát hành qua kho phân phối riêng của Vnstock, không qua PyPI;
+- người dùng tự chọn nguồn và dùng khóa của chính mình. Cần xác định có nguồn nào không cần khóa, và khóa (nếu có) đưa vào bằng biến môi trường, không ghi vào repo hay image.
+
+Nếu thế hệ 6 không dùng được miễn phí hoặc không chạy được cục bộ, nguồn dữ liệu phải chọn lại. Adapter (mục 4.4) giữ cho thay đổi này không lan ra phần còn lại.
 
 ---
 
@@ -335,7 +343,7 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 
 | Mã | Nội dung | Cách đóng |
 |---|---|---|
-| D1 | Cột, đơn vị giá, giới hạn tốc độ của vnstock | Chạy script probe (mục 2.2). PyPI hiện không cung cấp tệp của gói `vnstock` (trạng thái quarantined), cần nguồn cài khác |
+| D1 | Cột, đơn vị giá, giới hạn tốc độ của vnstock; cách cài và yêu cầu khóa của thế hệ 6 | Chạy `scripts/probe_vnstock.py` trên máy có mạng (mục 2.2). Từ môi trường phát triển hiện tại không chạy được: các máy chủ dữ liệu bị chặn và gói `vnstock` trên PyPI bị quarantine |
 | D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
 
 ---
