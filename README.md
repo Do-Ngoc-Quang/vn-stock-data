@@ -3,6 +3,8 @@
 Dữ liệu giao dịch cổ phiếu Việt Nam (EOD, cập nhật hàng tuần) cho AI agent truy vấn qua MCP tool.
 
 > Trạng thái: **bản nháp thiết kế, chưa có code.** Không phải tư vấn đầu tư.
+>
+> Toàn bộ chạy **cục bộ**: scheduler của hệ điều hành → pipeline Python → DuckDB + Parquet → MCP server stdio. Chưa dùng đám mây.
 
 ## Tài liệu thiết kế
 
@@ -26,13 +28,18 @@ vn-stock-data/
 │   ├── validation/             # Kiểm tra chất lượng (mục 5)
 │   ├── features/               # Tính chỉ báo → features_daily
 │   └── db/                     # Truy cập cơ sở dữ liệu, công bố nguyên tử
-├── mcp_server/                 # Phía đọc dữ liệu (chỉ SELECT)
+├── mcp_server/                 # Phía đọc dữ liệu (DuckDB chỉ đọc, stdio)
 │   └── tools/                  # get_price_history, get_data_status
-├── sql/                        # Schema, migration
+├── sql/                        # Schema DuckDB (DDL)
 ├── scripts/                    # Script probe vnstock (Giai đoạn 0), tiện ích
-└── tests/
-    ├── pipeline/
-    └── mcp_server/
+├── tests/
+│   ├── pipeline/
+│   └── mcp_server/
+└── data/                       # Không đưa vào git (tạo khi chạy)
+    ├── raw/                    # Parquet, không sửa không xóa
+    ├── curated.duckdb          # Tệp đang phục vụ
+    ├── logs/
+    └── last_run.json
 ```
 
-Các thư mục rỗng giữ chỗ bằng `.gitkeep`; cấu trúc có thể đổi khi chốt các quyết định mở (D3, D4, D7).
+Các thư mục rỗng giữ chỗ bằng `.gitkeep`; cấu trúc có thể đổi khi chốt các quyết định mở (D1, D8).

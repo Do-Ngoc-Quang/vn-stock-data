@@ -1,6 +1,7 @@
 # Thiết kế: Pipeline thu thập dữ liệu giao dịch chứng khoán Việt Nam (hàng tuần)
 
 - **Trạng thái:** Bản nháp thiết kế (chưa có code)
+- **Phạm vi triển khai:** toàn bộ chạy **cục bộ trên máy cá nhân**, chưa dùng dịch vụ đám mây (xem mục 3.1)
 - **Ngày:** 2026-11-09
 - **Tài liệu liên quan:** `stock-mcp-tool.md` (MCP tool để AI agent truy vấn dữ liệu). Hai tài liệu nối với nhau **chỉ qua schema ở mục 6** của tài liệu này.
 
@@ -18,6 +19,7 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 - Dữ liệu: giá và khối lượng giao dịch hàng ngày (OHLCV), đã điều chỉnh.
 - Tần suất cập nhật: **mỗi tuần một lần, Thứ 6 lúc 18:00 (giờ Việt Nam)**.
 - Chỉ báo kỹ thuật tính sẵn (mục 6.4).
+- Chạy cục bộ: không có máy chủ, không có dịch vụ đám mây, không cần tài khoản bên ngoài ngoài nguồn dữ liệu.
 
 ### 1.3 Ngoài phạm vi
 
@@ -74,11 +76,13 @@ Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): c
 ## 3. Kiến trúc
 
 ```
-                 Thứ 6, 18:00 ICT (11:00 UTC)
+                 Thứ 6, 18:00 giờ Việt Nam
                           │
-                    ┌─────▼──────┐
-                    │  Scheduler │
-                    └─────┬──────┘
+                    ┌─────▼──────────────┐
+                    │ Scheduler của HĐH  │
+                    │ (cron / launchd /  │
+                    │  Task Scheduler)   │
+                    └─────┬──────────────┘
                           │
               ┌───────────▼────────────┐
               │  Ingestion job         │
@@ -86,8 +90,9 @@ Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): c
               └───────────┬────────────┘
                           │ ghi nguyên bản
                   ┌───────▼───────┐
-                  │  RAW (object  │
-                  │   storage)    │
+                  │  RAW (tệp     │
+                  │  Parquet cục  │
+                  │  bộ)          │
                   └───────┬───────┘
                           │
               ┌───────────▼────────────┐
@@ -95,17 +100,33 @@ Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): c
               └───────────┬────────────┘
                           │ chỉ mã đạt
               ┌───────────▼────────────┐
-              │  CURATED (prices_daily)│
+              │  CURATED (DuckDB)      │
+              │  prices_daily          │
               └───────────┬────────────┘
                           │
               ┌───────────▼────────────┐
               │  Feature computation   │
               │  (features_daily)      │
               └───────────┬────────────┘
-                          │ commit nguyên tử + publish run
+                          │ công bố nguyên tử: đổi tên tệp DB tạm → tệp DB phục vụ
                           ▼
-              Bên đọc (MCP server, xem stock-mcp-tool.md)
+              Bên đọc (MCP server stdio cục bộ, xem stock-mcp-tool.md)
 ```
+
+### 3.1 Mô hình triển khai cục bộ
+
+| Thành phần | Cách làm |
+|---|---|
+| Ngôn ngữ, chạy | Python, một lệnh CLI chạy trọn một lần (ví dụ `python -m pipeline.run`) |
+| Lịch | Scheduler của hệ điều hành: cron (Linux), launchd (macOS) hoặc Task Scheduler (Windows) |
+| Raw | Tệp Parquet trong thư mục `data/raw/` |
+| Curated + features | Một tệp DuckDB `data/curated.duckdb` |
+| Log, tóm tắt | `data/logs/`, `data/last_run.json` |
+| Cấu hình | `config/` (universe, ngưỡng); không chứa bí mật |
+
+Thư mục `data/` không đưa vào git.
+
+**Ràng buộc của DuckDB cần tính trước:** một tệp DuckDB không cho tiến trình khác đọc trong lúc một tiến trình đang ghi. Vì vậy pipeline **không ghi thẳng vào tệp đang phục vụ** (xem mục 6.5), và MCP server mở tệp ở chế độ chỉ đọc, mỗi yêu cầu một kết nối ngắn rồi đóng.
 
 ---
 
@@ -113,8 +134,9 @@ Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): c
 
 ### 4.1 Lịch chạy
 
-- Chạy vào Thứ 6, 18:00 ICT, tức 11:00 UTC. Lúc này HOSE đã đóng cửa nên dữ liệu phiên đã chốt.
-- Ví dụ cron kiểu EventBridge: `cron(0 11 ? * FRI *)`.
+- Chạy vào Thứ 6, 18:00 giờ Việt Nam (11:00 UTC). Lúc này HOSE đã đóng cửa nên dữ liệu phiên đã chốt.
+- Ví dụ cron: `0 18 * * 5` (máy đặt múi giờ Asia/Ho_Chi_Minh; nếu không, quy đổi sang 11:00 UTC).
+- **Máy cá nhân có thể tắt hoặc ngủ vào đúng giờ.** Giảm thiểu: đặt thêm một lịch chạy bù (khi đăng nhập hoặc mỗi ngày). Lệnh chạy bù tự kiểm tra: nếu tuần này đã có lần chạy `published` thì thoát ngay, nếu chưa thì chạy. Dựa vào tính idempotent (mục 4.6), chạy thêm không gây hại.
 - Không phụ thuộc lịch giao dịch: job lấy dữ liệu đến thời điểm chạy, phiên cuối cùng có dữ liệu là `as_of`. Khi Thứ 6 nghỉ lễ, `as_of` tự nhiên là phiên trước đó.
 
 ### 4.2 Danh sách mã (universe)
@@ -142,15 +164,15 @@ Hợp đồng của `DataProvider` (mô tả, không phải code):
 
 ### 4.5 Luồng một lần chạy
 
-1. Tạo `run_id`, ghi bản ghi `runs` với trạng thái `running`.
+1. Tạo `run_id`, ghi nhận lần chạy ở trạng thái `running` vào `data/last_run.json` (chưa đụng tới tệp DB đang phục vụ).
 2. Đọc universe.
 3. Với từng mã: lấy dữ liệu, ghi **raw**, ghi nhận kết quả lấy (thành công/lỗi).
 4. Chạy **validation** (mục 5) cho từng mã. Mã không đạt bị loại khỏi curated và ghi vào `quality_issues`.
-5. Trong **một giao dịch cơ sở dữ liệu**: ghi `prices_daily` (upsert) và tính lại toàn bộ `features_daily` cho các mã đạt.
-6. Kiểm tra ngưỡng thất bại của lần chạy (mục 5.3). Nếu đạt, đánh dấu `runs.status = 'published'`; nếu không, `failed`.
+5. Sao chép tệp DB đang phục vụ thành **tệp tạm** (`data/curated.staging.duckdb`). Trong **một giao dịch** trên tệp tạm: ghi `prices_daily` (upsert) và tính lại toàn bộ `features_daily` cho các mã đạt.
+6. Kiểm tra ngưỡng thất bại của lần chạy (mục 5.3). Nếu đạt: đánh dấu `runs.status = 'published'` trong tệp tạm, rồi **đổi tên tệp tạm thành tệp phục vụ** (thao tác nguyên tử của hệ điều hành). Nếu không đạt: bỏ tệp tạm, ghi lần chạy `failed` (mục 6.5).
 7. Gửi thông báo kết quả (mục 4.7).
 
-Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy dữ liệu thuộc lần chạy `published` mới nhất.
+Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy tệp DB cũ hoặc tệp DB mới hoàn chỉnh, không bao giờ thấy trạng thái dở dang.
 
 ### 4.6 Tính idempotent
 
@@ -160,9 +182,10 @@ Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy
 
 ### 4.7 Giám sát và thông báo
 
-- Mỗi lần chạy gửi một thông báo tóm tắt: số mã thành công/bị loại/lỗi, `as_of`, các cảnh báo.
+- Mỗi lần chạy ghi một bản tóm tắt: số mã thành công/bị loại/lỗi, `as_of`, các cảnh báo, vào `data/last_run.json` và `data/logs/`.
 - Thất bại (trạng thái `failed`) gửi thông báo mức cao.
-- **Kênh thông báo (D6):** email.
+- **Kênh thông báo (D6):** mặc định là log và `data/last_run.json` (không cần cấu hình). **Email qua SMTP là tùy chọn**: địa chỉ và mật khẩu ứng dụng đọc từ biến môi trường, không ghi vào repo. Vì chạy cục bộ không có ai giám sát, nên nên bật email cho trạng thái `failed`.
+- Kiểm tra độ tươi: `get_data_status` (xem `stock-mcp-tool.md`) cho biết `as_of` và thời điểm hoàn thành, để phát hiện khi lịch chạy hỏng âm thầm.
 
 ---
 
@@ -216,13 +239,15 @@ Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng **tạm giữ 15%** (mức rộng nh
 
 ### 6.2 Lớp raw
 
-Lưu dạng tệp trong object storage, **không sửa, không xóa**.
+Lưu dạng tệp Parquet trong thư mục cục bộ `data/raw/`, **không sửa, không xóa**. Nên sao lưu định kỳ (mục 9), vì đây là nơi duy nhất giữ các phiên bản giá điều chỉnh cũ.
 
-- Đường dẫn gợi ý: `raw/prices/source=<nguồn>/run_date=<YYYY-MM-DD>/run_id=<id>/prices.<định dạng>`
+- Đường dẫn gợi ý: `data/raw/prices/source=<nguồn>/run_date=<YYYY-MM-DD>/run_id=<id>/prices.<định dạng>`
 - Nội dung: dữ liệu đúng như nguồn trả về, thêm hai cột `fetched_at` và `run_id`. Không đổi tên cột, không đổi đơn vị ở lớp này.
-- Định dạng (Parquet hay CSV nén): D4 (mục 7).
+- Định dạng: Parquet nén (D4).
 
 ### 6.3 Lớp curated
+
+Lưu trong tệp DuckDB. Kiểu `numeric` ở các bảng dưới ánh xạ sang `DECIMAL`/`DOUBLE` của DuckDB (chọn khi viết DDL ở `sql/`); các ràng buộc `CHECK` và khóa chính DuckDB đều hỗ trợ.
 
 **`runs`** — mỗi lần chạy một dòng
 
@@ -302,7 +327,11 @@ Quy tắc:
 
 ### 6.5 Công bố nguyên tử
 
-Ghi `prices_daily` và `features_daily` trong **một giao dịch**; chỉ sau khi giao dịch thành công và vượt ngưỡng thất bại mới đánh dấu `runs.status = 'published'`. Bên đọc luôn truy vấn dựa trên lần chạy `published` mới nhất.
+Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp tạm** (bản sao của tệp đang phục vụ). Chỉ sau khi giao dịch thành công và vượt ngưỡng thất bại mới đánh dấu `runs.status = 'published'` rồi đổi tên tệp tạm thành tệp phục vụ. Bên đọc luôn truy vấn dựa trên lần chạy `published` mới nhất.
+
+**Lần chạy thất bại:** tệp tạm bị bỏ, `prices_daily` và `features_daily` của tệp phục vụ không đổi. Bản ghi `runs`, `symbol_run_status`, `quality_issues` của lần thất bại được ghi vào tệp phục vụ bằng một giao dịch ngắn riêng (thử lại nếu tệp đang bị khóa), và luôn có trong `data/last_run.json`. `get_data_status` dựa vào đó để báo "lần chạy mới nhất thất bại, đang phục vụ dữ liệu của lần `published` trước".
+
+**Windows:** không đổi tên đè lên tệp đang mở được, nên bên đọc phải đóng kết nối sau mỗi yêu cầu và pipeline thử lại có giới hạn khi đổi tên.
 
 ---
 
@@ -312,17 +341,17 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch**; chỉ sau k
 |---|---|---|---|---|
 | D1 | API, cột và đơn vị giá của vnstock bản hiện tại là gì? | Chạy script probe | Làm đầu tiên (Giai đoạn 0) | **Mở, bị chặn:** PyPI `vnstock` đang quarantine, cần nguồn cài khác để probe |
 | D2 | Universe gồm những mã nào? | VN30 / VN100 / watchlist riêng | Bắt đầu nhỏ (VN30 hoặc watchlist), mở rộng sau | **Đã chốt: VN100** (xem hệ quả dưới bảng) |
-| D3 | Pipeline chạy ở đâu? | AWS Lambda hoặc ECS / GitHub Actions / máy cá nhân | Chọn theo thời gian chạy sau khi probe; lịch hàng tuần nên rất nhẹ | **Đã chốt: AWS**, EventBridge kích hoạt. Lambda hay ECS chốt sau probe (xem dưới bảng) |
-| D4 | Lưu curated ở đâu, raw ở định dạng nào? | Postgres hoặc DuckDB; Parquet hoặc CSV nén | Postgres nếu MCP server chạy từ xa; DuckDB nếu mọi thứ chạy cục bộ | **Đã chốt: Postgres** cho curated; **Parquet** trên S3 cho raw |
+| D3 | Pipeline chạy ở đâu? | AWS / GitHub Actions / máy cá nhân | Chọn theo thời gian chạy sau khi probe | **Đã chốt: máy cá nhân**, scheduler của hệ điều hành. AWS bỏ khỏi phạm vi hiện tại (xem Giai đoạn 5) |
+| D4 | Lưu curated ở đâu, raw ở định dạng nào? | Postgres hoặc DuckDB; Parquet hoặc CSV nén | DuckDB nếu mọi thứ chạy cục bộ | **Đã chốt: DuckDB** (một tệp) cho curated; **Parquet** cục bộ cho raw |
 | D5 | Có nguồn đối chiếu thứ hai không? | SSI FastConnect / không | Có nếu bạn có hoặc sẵn sàng mở tài khoản SSI; nếu không, bỏ qua giai đoạn đầu | **Hoãn:** bỏ qua giai đoạn đầu (chưa có tài khoản SSI); xem lại ở Giai đoạn 3. `CROSS_SOURCE_MISMATCH` chưa bật |
-| D6 | Kênh thông báo kết quả chạy? | Email / Slack / khác | Chọn kênh bạn kiểm tra hằng ngày | **Đã chốt: email** |
+| D6 | Kênh thông báo kết quả chạy? | Email / Slack / khác | Chọn kênh bạn kiểm tra hằng ngày | **Đã chốt: log + `last_run.json` mặc định; email SMTP tùy chọn** |
 | D8 | Biên độ giá các sàn hiện hành (cho ngưỡng cảnh báo biến động ngày) | Xác minh theo quy định hiện hành | Xác minh trước khi hoàn thiện kiểm tra `LARGE_DAILY_MOVE` | **Mở, chưa xác minh được:** tra cứu 2026-11-09 cho HOSE ±7%, HNX ±10%, UPCoM ±15% (một nguồn ghi UPCoM 10%), không có nguồn chính thức nào xác nhận. Tạm dùng 15%; cần đối chiếu quy chế của HOSE/HNX |
 
 Hệ quả của các quyết định đã chốt:
-- **D2:** VN100 gồm khoảng 100 mã. Gọi tuần tự có nghỉ giữa các lần gọi, nên tổng thời gian chạy có thể vượt 15 phút.
-- **D3:** nếu probe cho thấy lần chạy vượt giới hạn 15 phút của Lambda thì dùng ECS Fargate scheduled task (đề xuất mặc định); ngược lại dùng Lambda. Cả hai đều kích hoạt bằng EventBridge `cron(0 11 ? * FRI *)`.
-- **D4:** Postgres cần chạy bền vững (ví dụ RDS). Tài khoản của pipeline có quyền ghi; tài khoản của MCP server chỉ có SELECT (xem `stock-mcp-tool.md`, mục 7).
-- **D6:** gửi email qua dịch vụ gửi thư (ví dụ SES); lỗi `failed` gửi mức cao như mục 4.7.
+- **D2:** VN100 gồm khoảng 100 mã. Gọi tuần tự có nghỉ giữa các lần gọi; chạy cục bộ không có giới hạn thời gian như Lambda, nhưng vẫn cần đo thời gian ở Giai đoạn 0.
+- **D3:** phụ thuộc máy bật đúng giờ; có lịch chạy bù (mục 4.1).
+- **D4:** DuckDB không cho đọc đồng thời khi đang ghi, nên dùng tệp tạm và đổi tên (mục 3.1 và 6.5). Dữ liệu cỡ này (100 mã × vài năm ngày) nhỏ, sao chép tệp mỗi tuần không đáng kể.
+- **D6:** email cần thông tin đăng nhập SMTP nên để tùy chọn; mặc định không cần cấu hình gì.
 
 (D7 liên quan đến MCP server, xem `stock-mcp-tool.md`.)
 
@@ -336,18 +365,21 @@ Hệ quả của các quyết định đã chốt:
 **Giai đoạn 1 — Pipeline giá**
 - Adapter vnstock, raw, validation, `prices_daily`, `runs`, `symbol_run_status`, `quality_issues`.
 - Chạy thủ công và kiểm tra bằng mắt trên một số mã.
-- Lên lịch hàng tuần và thông báo kết quả.
+- Lên lịch hàng tuần bằng scheduler của hệ điều hành (kèm lịch chạy bù) và ghi kết quả chạy.
 
 **Giai đoạn 2 — Chỉ báo và công bố nguyên tử**
-- Tính `features_daily`, công bố nguyên tử theo mục 6.5.
+- Tính `features_daily`, công bố nguyên tử bằng tệp tạm và đổi tên theo mục 6.5.
 - (MCP tool ở giai đoạn này nằm trong `stock-mcp-tool.md`.)
 
 **Giai đoạn 3 — Củng cố**
-- Nguồn đối chiếu (nếu D5 có), giám sát, báo cáo chất lượng dữ liệu theo tuần.
+- Nguồn đối chiếu (nếu D5 có), email SMTP cho lỗi, sao lưu `data/`, báo cáo chất lượng dữ liệu theo tuần.
 
 **Giai đoạn 4 — Mở rộng**
 - Báo cáo tài chính (cần lưu ngày công bố để tránh sai lệch nhìn trước khi backtest).
 - Backtest các tín hiệu; ghi lại mọi khuyến nghị của AI để đánh giá sau này.
+
+**Giai đoạn 5 — Tùy chọn: đưa lên máy chủ**
+- Chỉ làm khi cần dùng từ nhiều máy hoặc không muốn phụ thuộc máy cá nhân. Hướng: đổi DuckDB sang Postgres, raw sang object storage, scheduler sang dịch vụ đám mây, MCP sang HTTP có xác thực. Thiết kế hiện tại giữ các điểm này tách biệt (adapter `DataProvider`, schema ở mục 6, truy vấn tham số hóa) nên thay đổi nằm ở lớp lưu trữ và triển khai.
 
 ---
 
@@ -359,7 +391,10 @@ Hệ quả của các quyết định đã chốt:
 | Sai đơn vị giá (nghìn VND so với VND) | Probe ở Giai đoạn 0; adapter chuẩn hóa về VND; ràng buộc và kiểm tra giá bất thường |
 | Giá điều chỉnh làm lệch quá khứ | Lấy lại toàn bộ lịch sử mỗi tuần; giữ raw để truy vết |
 | Điều khoản sử dụng nguồn dữ liệu | Dùng cá nhân; nếu mở rộng thành sản phẩm hoặc dùng trong tổ chức, xin phép tác giả/nhà cung cấp |
-| Run Thứ 6 thất bại mà không ai biết | Thông báo bắt buộc; lần chạy dang dở không được công bố |
+| Run Thứ 6 thất bại mà không ai biết | Ghi `last_run.json`; email tùy chọn cho `failed`; `get_data_status` báo độ tươi; lần chạy dang dở không được công bố |
+| Máy tắt/ngủ đúng giờ chạy | Lịch chạy bù idempotent (mục 4.1) |
+| Mất hoặc hỏng tệp `data/` (đĩa hỏng, xóa nhầm) | Sao lưu `data/curated.duckdb` và `data/raw/` định kỳ ra ổ khác; curated dựng lại được từ raw nếu raw còn |
+| Đọc và ghi DuckDB xung đột | Pipeline ghi tệp tạm rồi đổi tên; bên đọc mở chỉ đọc, kết nối ngắn |
 | Quá tin tín hiệu từ dữ liệu giá công khai | Backtest nghiêm túc (tránh look-ahead và survivorship bias); xem AI là một đầu vào, không phải quyết định tự động |
 
 ---

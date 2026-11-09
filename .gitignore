@@ -1,0 +1,6 @@
+# Dữ liệu sinh ra khi chạy, không đưa vào git
+data/
+__pycache__/
+*.pyc
+.venv/
+.env

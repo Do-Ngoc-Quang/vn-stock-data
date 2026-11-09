@@ -1,6 +1,7 @@
 # Thiết kế: MCP tool truy vấn dữ liệu giao dịch cho AI agent
 
 - **Trạng thái:** Bản nháp thiết kế (chưa có code)
+- **Phạm vi triển khai:** chạy cục bộ trên máy cá nhân; MCP server là tiến trình stdio do ứng dụng agent khởi chạy
 - **Ngày:** 2026-11-09
 - **Tài liệu liên quan:** `stock-pipeline-collection.md` (pipeline thu thập dữ liệu hàng tuần). MCP tool **chỉ đọc** các bảng do pipeline tạo ra, theo schema ở mục 6 của tài liệu đó.
 
@@ -65,7 +66,7 @@ Thêm chỉ báo mới = thêm cột ở pipeline và thêm tên vào danh sách
 
 ## 3. Nguyên tắc thiết kế
 
-1. **Chỉ đọc.** Tài khoản cơ sở dữ liệu của MCP server chỉ có quyền SELECT.
+1. **Chỉ đọc.** MCP server mở tệp DuckDB ở chế độ chỉ đọc (`read_only`); mã của server không có câu lệnh ghi nào.
 2. **Truy vấn tham số hóa**, agent không gửi SQL tự do.
 3. **Chỉ báo tính sẵn, không tính theo yêu cầu.** Cùng một mã, cùng một ngày thì mọi lần gọi đều ra cùng một con số, bất kể agent chọn khoảng nào. Hệ quả: `indicators` chỉ nhận danh sách cố định.
 4. **Từ chối rõ ràng, không cắt ngầm.** Tham số sai thì trả lỗi kèm cách sửa, để agent tự điều chỉnh được.
@@ -198,11 +199,13 @@ Khuyến nghị agent gọi tool này trước khi truy vấn lần đầu trong
 
 ## 7. Triển khai và bảo mật
 
-- **Đã quyết định (D7):** MCP server chạy **từ xa** (HTTP), đọc Postgres đã chốt ở D4 trong `stock-pipeline-collection.md`. Bắt buộc xác thực mọi yêu cầu (token do người dùng cấp, có thể thu hồi) và dùng TLS. Cơ chế xác thực cụ thể (bearer token tĩnh hay OAuth) chọn khi triển khai ở Giai đoạn 2, miễn đáp ứng hai yêu cầu trên.
-- Quyền cơ sở dữ liệu: chỉ SELECT, trên các bảng liệt kê ở mục 2.1.
+- **Đã quyết định (D7):** MCP server chạy **cục bộ** qua **stdio**, do ứng dụng agent trên cùng máy khởi chạy. Không mở cổng mạng nên không cần xác thực; bảo vệ dựa vào quyền truy cập tệp của hệ điều hành.
+- Đường dẫn tệp DB lấy từ cấu hình hoặc biến môi trường, không đưa vào mô tả tool hay kết quả trả về.
+- Mở `data/curated.duckdb` ở chế độ chỉ đọc, **mỗi yêu cầu một kết nối ngắn rồi đóng**, để pipeline đổi tên tệp khi công bố (xem `stock-pipeline-collection.md`, mục 6.5). Nếu tệp đang được thay trong khoảnh khắc đó, thử lại ngắn rồi mới báo lỗi.
+- Quyền truy cập dữ liệu: chỉ đọc, trên các bảng liệt kê ở mục 2.1.
 - Truy vấn tham số hóa; không nối chuỗi từ đầu vào của agent.
 - Đánh dấu cả hai tool là chỉ đọc trong mô tả MCP.
-- Giới hạn số lần gọi mỗi phút.
+- Giới hạn số lần gọi mỗi phút chỉ là tùy chọn (một người dùng, cục bộ); ưu tiên giới hạn dòng và số mã để bảo vệ ngữ cảnh của agent.
 - Log yêu cầu (tham số, thời gian, kết quả/lỗi) phục vụ gỡ lỗi.
 - Không đưa khóa API hay thông tin kết nối cơ sở dữ liệu vào mô tả tool hay kết quả trả về.
 - Nội dung từ cơ sở dữ liệu trả về chỉ gồm số liệu và mã; không chứa văn bản tự do do bên ngoài kiểm soát (tránh đường vào cho chỉ dẫn độc hại tới agent). Trường `detail` trong `quality_issues` khi đưa vào cảnh báo chỉ dùng chuỗi do pipeline tự sinh.
@@ -213,8 +216,8 @@ Khuyến nghị agent gọi tool này trước khi truy vấn lần đầu trong
 
 | Mã | Câu hỏi | Lựa chọn | Gợi ý | Trạng thái |
 |---|---|---|---|---|
-| D7 | MCP server chạy ở đâu và xác thực thế nào? | Cục bộ (stdio) / từ xa (HTTP) | Cục bộ nếu chỉ dùng cá nhân; từ xa cần xác thực | **Đã chốt: từ xa (HTTP)** với xác thực và TLS bắt buộc (xem mục 7) |
-| D9 | Các giới hạn: 10 mã, 3.000 dòng, tốc độ gọi mỗi phút | Giữ đề xuất hoặc điều chỉnh | Giữ đề xuất, đo lại sau khi dùng thực tế | **Đã chốt: giữ đề xuất** (10 mã, 3.000 dòng); tốc độ gọi đặt 30 lần/phút/token khi triển khai. Đo lại ở Giai đoạn 3 |
+| D7 | MCP server chạy ở đâu và xác thực thế nào? | Cục bộ (stdio) / từ xa (HTTP) | Cục bộ nếu chỉ dùng cá nhân; từ xa cần xác thực | **Đã chốt: cục bộ (stdio)**, không cần xác thực. Từ xa để Giai đoạn 5 của pipeline |
+| D9 | Các giới hạn: 10 mã, 3.000 dòng, tốc độ gọi mỗi phút | Giữ đề xuất hoặc điều chỉnh | Giữ đề xuất, đo lại sau khi dùng thực tế | **Đã chốt: giữ 10 mã và 3.000 dòng**; giới hạn tốc độ gọi bỏ khỏi mặc định (tùy chọn). Đo lại ở Giai đoạn 3 |
 | D10 | Có cần thêm tool tra cứu tổng hợp nhiều mã (ví dụ xếp hạng theo thay đổi giá) | Thêm sau / không | Hoãn; đợi xem agent thực tế cần gì | **Đã chốt: hoãn** đến Giai đoạn 4, quyết định dựa trên log sử dụng thực tế. Lưu ý universe VN100 làm nhu cầu này nhiều khả năng xuất hiện |
 
 (D1–D6 và D8 thuộc phía pipeline, xem `stock-pipeline-collection.md`.)
@@ -231,7 +234,7 @@ Dùng chung đánh số giai đoạn với tài liệu pipeline.
 - Kiểm tra chéo: một số giá trị chỉ báo trả về so với tính độc lập bằng công cụ khác.
 
 **Giai đoạn 3 — Củng cố**
-- Giới hạn tốc độ, log yêu cầu, đo kích thước kết quả thực tế để chỉnh D9.
+- Log yêu cầu, đo kích thước kết quả thực tế để chỉnh D9; giới hạn tốc độ nếu cần.
 
 **Giai đoạn 4 — Mở rộng**
 - Thêm tool/dữ liệu cho báo cáo tài chính khi pipeline có. Cân nhắc D10.
