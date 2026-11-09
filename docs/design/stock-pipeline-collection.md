@@ -59,14 +59,14 @@ Script `scripts/probe_vnstock.py` gọi vnstock trên một vài mã và ghi bá
 | Cột trả về | `time, open, high, low, close, volume` |
 | Kiểu dữ liệu | `time`: datetime có múi giờ `Asia/Ho_Chi_Minh`; giá: float64; `volume`: int64 |
 | Đơn vị giá | **Nghìn VND** (đã xác nhận với bảng giá): `close` FPT 51.0, VCB 53.6 tương ứng 51.000 và 53.600 VND. Adapter nhân 1000 |
-| Giá đã điều chỉnh | **Chưa kết luận.** Không có bước nhảy vượt biên độ ở 5 mã (FPT, VNM, HPG, MWG, SSI), nhưng chỉ có 1 năm dữ liệu nên có thể không chứa sự kiện nào. VCI và KBS lệch nhau tối đa 0,16% ở ngày cũ (tỷ lệ VCI/KBS 0,9984–0,9998; HPG và MWG đúng 1,0) và khớp 1,0 ở ngày mới. Chênh lệch có tính hệ thống (trung vị dưới 1), có thể do hai nguồn xử lý cổ tức tiền mặt khác nhau; cần xác định ngày đổi mức |
+| Giá đã điều chỉnh | **Có điều chỉnh ở mức nhỏ, chưa chứng minh được với thưởng/chia tách lớn.** 10 mã HOSE (FPT, VNM, HPG, MWG, SSI, REE, PNJ, VCB, VIC, MSN), 1 năm dữ liệu: không có bước nhảy nào vượt biên độ 7%. VCI và KBS lệch nhau tối đa 0,16% ở ngày cũ, và độ lệch đổi mức tại một ngày cụ thể ở 5 mã (VNM 2026-06-22, SSI 2026-08-11, REE 2026-05-14, PNJ 2026-04-17, VCB 2026-07-20), dấu hiệu của sự kiện doanh nghiệp được một nguồn điều chỉnh còn nguồn kia thì không. Chiều lệch không nhất quán: VCI thấp hơn KBS ở VNM, SSI, VCB, cao hơn ở REE, PNJ; vậy không nguồn nào điều chỉnh đầy đủ hơn hẳn. Cần đối chiếu các ngày trên với ngày giao dịch không hưởng quyền |
 | Thời gian phản hồi | Trung vị khoảng 0,07–0,08 giây; lần đầu tới 1,3 giây; 5 lần liên tiếp không lỗi |
 | Giới hạn tốc độ | **10 lượt gọi mỗi phút.** Lượt thứ 11 trả `EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)`. Hạn mức chung cho các nguồn (VCI và KBS cùng cạn). Chưa biết có hạn mức theo ngày không |
 | Độ sâu lịch sử | Yêu cầu 5 năm nhưng chỉ nhận **248 dòng, từ 2025-11-10** (đúng 1 năm), ở cả VCI lẫn KBS. Chưa rõ do hạn mức theo gói hay do giới hạn của từng lần gọi (xem D11) |
 | Dòng của ngày chạy | Có dòng 2026-11-09 khi chạy sau 15:00 |
 
 **Còn lại của D1:**
-- kết luận giá đã điều chỉnh: chạy lại `scripts/check_adjusted.py` (script giờ báo ngày hai nguồn đổi mức tỷ lệ, tức ngày một nguồn bắt đầu điều chỉnh) trên các mã chưa lấy được vì hết hạn mức; kết luận chắc hơn khi có nhiều năm dữ liệu;
+- đối chiếu 5 ngày đổi mức ở trên với ngày giao dịch không hưởng quyền thực tế, và kiểm tra thưởng/chia tách lớn khi có nhiều năm dữ liệu (cần D11);
 - xác định độ sâu lịch sử khả dụng (D11) bằng `scripts/check_history_depth.py`;
 - thử các nguồn khác (`kbs`, `vnd`) để biết nguồn nào ổn định nhất;
 - vnstock thế hệ 6: theo README của kho GitHub tác giả (chưa xác minh trực tiếp), các phiên bản trước thế hệ 6 ngừng hoạt động từ 2026-11-10 và thế hệ 6 yêu cầu người dùng dùng khóa của nguồn. Phải chạy lại probe trên thế hệ 6 và xác định có cần khóa không (khóa nếu có đưa vào bằng biến môi trường, không ghi vào repo hay image).
@@ -176,6 +176,7 @@ Hợp đồng của `DataProvider` (mô tả, không phải code):
 
 - Đầu vào: mã, ngày bắt đầu, ngày kết thúc.
 - Đầu ra: bảng có các cột chuẩn `symbol, trade_date, open, high, low, close, volume`; giá đơn vị **VND**; giá đã điều chỉnh.
+- Adapter dùng **một nguồn cố định** (mặc định `vci`) cho mọi mã và mọi lần chạy, không trộn nguồn trong lịch sử của một mã. Các nguồn lệch nhau tới khoảng 0,1% do xử lý điều chỉnh khác nhau (mục 2.2), nên đổi nguồn làm dịch toàn bộ lịch sử và chỉ báo một lượng nhỏ; đổi nguồn là thay đổi có chủ đích, ghi `source` trong `prices_daily` và `runs.provider_version`.
 - Adapter chịu trách nhiệm đổi tên cột và đổi đơn vị về chuẩn. Theo probe (mục 2.2), vnstock 5.2.2 trả cột `time` thay cho `trade_date` và giá theo nghìn VND, nên adapter lấy **ngày theo múi giờ `Asia/Ho_Chi_Minh` của `time`** (không quy đổi sang UTC, tránh lệch một ngày) và nhân giá với 1000.
 - Lỗi được báo bằng ngoại lệ có phân loại: tạm thời (thử lại được) hoặc vĩnh viễn (ví dụ mã không tồn tại).
 
@@ -353,7 +354,7 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 
 | Mã | Nội dung | Cách đóng |
 |---|---|---|
-| D1 | Xác minh vnstock | **Đã đóng một phần.** Đã biết cách gọi, cột, kiểu, đơn vị giá, độ trễ, giới hạn 10 lượt/phút (mục 2.2). Còn: kết luận giá điều chỉnh, độ sâu lịch sử (D11), và thế hệ 6 / yêu cầu khóa |
+| D1 | Xác minh vnstock | **Đã đóng một phần.** Đã biết cách gọi, cột, kiểu, đơn vị giá, độ trễ, giới hạn 10 lượt/phút, mức độ điều chỉnh giá (mục 2.2). Còn: kiểm tra thưởng/chia tách lớn (cần D11) và thế hệ 6 / yêu cầu khóa |
 | D11 | Độ sâu lịch sử khả dụng. Thiết kế cần 3 năm (mục 4.3) nhưng probe chỉ nhận về 1 năm (248 phiên) | Chạy `scripts/check_history_depth.py`; nếu chỉ có 1 năm thì chọn: ghép nhiều lần gọi theo cửa sổ nếu nguồn cho phép lấy từng cửa sổ cũ, nâng quyền truy cập, hoặc đổi nguồn. Nếu không có cách nào, `SMA200` chỉ có giá trị cho khoảng 50 phiên cuối và các khoảng truy vấn dài hơn phải ghi cảnh báo `null` theo mục 4.5 của tài liệu MCP |
 | D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
 

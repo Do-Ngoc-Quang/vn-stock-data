@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-11-09T15:31:56+0700",
+  "run_at": "2026-11-09T15:36:24+0700",
   "vnstock_version": "5.2.2",
   "range": [
     "2021-11-10",
@@ -14,14 +14,14 @@
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 1.81
+          "seconds": 1.58
         },
         "KBS": {
           "rows": 248,
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 0.48
+          "seconds": 0.42
         }
       },
       "cross_source": [
@@ -31,7 +31,8 @@
           "ratio_oldest": 0.9998,
           "ratio_newest": 1.0,
           "ratio_median": 0.9997,
-          "oldest_date": "2025-11-10"
+          "oldest_date": "2025-11-10",
+          "step": null
         }
       ]
     },
@@ -42,14 +43,14 @@
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 0.22
+          "seconds": 0.13
         },
         "KBS": {
           "rows": 248,
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 0.27
+          "seconds": 0.56
         }
       },
       "cross_source": [
@@ -59,7 +60,12 @@
           "ratio_oldest": 0.9991,
           "ratio_newest": 1.0,
           "ratio_median": 0.9992,
-          "oldest_date": "2025-11-10"
+          "oldest_date": "2025-11-10",
+          "step": {
+            "date": "2026-06-22",
+            "ratio_before": 0.9991,
+            "ratio_after": 1.0
+          }
         }
       ]
     },
@@ -70,14 +76,14 @@
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 0.22
+          "seconds": 0.18
         },
         "KBS": {
           "rows": 248,
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 0.33
+          "seconds": 0.28
         }
       },
       "cross_source": [
@@ -87,7 +93,12 @@
           "ratio_oldest": 1.0,
           "ratio_newest": 1.0,
           "ratio_median": 1.0,
-          "oldest_date": "2025-11-10"
+          "oldest_date": "2025-11-10",
+          "step": {
+            "date": "2025-12-24",
+            "ratio_before": 1.0,
+            "ratio_after": 1.0004
+          }
         }
       ]
     },
@@ -105,7 +116,7 @@
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 0.3
+          "seconds": 0.34
         }
       },
       "cross_source": [
@@ -115,7 +126,8 @@
           "ratio_oldest": 1.0,
           "ratio_newest": 1.0,
           "ratio_median": 1.0,
-          "oldest_date": "2025-11-10"
+          "oldest_date": "2025-11-10",
+          "step": null
         }
       ]
     },
@@ -126,7 +138,139 @@
           "first": "2025-11-10",
           "last": "2026-11-09",
           "jumps": [],
-          "seconds": 0.21
+          "seconds": 0.19
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.35
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 0.9984,
+          "ratio_newest": 1.0,
+          "ratio_median": 0.9991,
+          "oldest_date": "2025-11-10",
+          "step": {
+            "date": "2026-08-11",
+            "ratio_before": 0.999,
+            "ratio_after": 1.0
+          }
+        }
+      ]
+    },
+    "REE": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.32
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.35
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 1.0007,
+          "ratio_newest": 1.0,
+          "ratio_median": 1.0005,
+          "oldest_date": "2025-11-10",
+          "step": {
+            "date": "2026-05-14",
+            "ratio_before": 1.0008,
+            "ratio_after": 1.0
+          }
+        }
+      ]
+    },
+    "PNJ": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.15
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.32
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 1.0005,
+          "ratio_newest": 1.0,
+          "ratio_median": 1.0,
+          "oldest_date": "2025-11-10",
+          "step": {
+            "date": "2026-04-17",
+            "ratio_before": 1.0005,
+            "ratio_after": 1.0
+          }
+        }
+      ]
+    },
+    "VCB": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.22
+        },
+        "KBS": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.43
+        }
+      },
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 0.999,
+          "ratio_newest": 1.0,
+          "ratio_median": 0.9991,
+          "oldest_date": "2025-11-10",
+          "step": {
+            "date": "2026-07-20",
+            "ratio_before": 0.999,
+            "ratio_after": 1.0
+          }
+        }
+      ]
+    },
+    "VIC": {
+      "sources": {
+        "VCI": {
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.19
         },
         "KBS": {
           "rows": 248,
@@ -140,67 +284,42 @@
         {
           "pair": "VCI/KBS",
           "common_days": 248,
-          "ratio_oldest": 0.9984,
+          "ratio_oldest": 1.0,
           "ratio_newest": 1.0,
-          "ratio_median": 0.9991,
-          "oldest_date": "2025-11-10"
+          "ratio_median": 1.0,
+          "oldest_date": "2025-11-10",
+          "step": null
         }
       ]
-    },
-    "REE": {
-      "sources": {
-        "VCI": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        },
-        "KBS": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        }
-      },
-      "cross_source": []
-    },
-    "PNJ": {
-      "sources": {
-        "VCI": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        },
-        "KBS": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        }
-      },
-      "cross_source": []
-    },
-    "VCB": {
-      "sources": {
-        "VCI": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        },
-        "KBS": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        }
-      },
-      "cross_source": []
-    },
-    "VIC": {
-      "sources": {
-        "VCI": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        },
-        "KBS": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
-        }
-      },
-      "cross_source": []
     },
     "MSN": {
       "sources": {
         "VCI": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.16
         },
         "KBS": {
-          "error": "RuntimeError: Market().equity(...).ohlcv: EntitlementError: Đã dùng hết hạn mức theo phút (10/10 lượt gọi)\n(English: vnstock settings language en) | Vnstock().stock: ImportError: Lớp Vnstock() đã bỏ ở vnstock thế hệ 5. Dùng các lớp theo nhóm dữ liệu: Market, Fundamental, Reference, Macro, Insights, Analytics, ví "
+          "rows": 248,
+          "first": "2025-11-10",
+          "last": "2026-11-09",
+          "jumps": [],
+          "seconds": 0.29
         }
       },
-      "cross_source": []
+      "cross_source": [
+        {
+          "pair": "VCI/KBS",
+          "common_days": 248,
+          "ratio_oldest": 1.0,
+          "ratio_newest": 1.0,
+          "ratio_median": 1.0,
+          "oldest_date": "2025-11-10",
+          "step": null
+        }
+      ]
     }
   },
   "summary": {
@@ -208,18 +327,7 @@
       "VCI": 0,
       "KBS": 0
     },
-    "fetch_errors": [
-      "REE/VCI",
-      "REE/KBS",
-      "PNJ/VCI",
-      "PNJ/KBS",
-      "VCB/VCI",
-      "VCB/KBS",
-      "VIC/VCI",
-      "VIC/KBS",
-      "MSN/VCI",
-      "MSN/KBS"
-    ],
-    "symbols_with_data": 5
+    "fetch_errors": [],
+    "symbols_with_data": 10
   }
 }
