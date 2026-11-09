@@ -65,7 +65,7 @@ Script `scripts/probe_vnstock.py` gọi vnstock trên một vài mã và ghi bá
 | Dòng của ngày chạy | Có dòng 2026-11-09 khi chạy sau 15:00 |
 
 **Còn lại của D1:**
-- kiểm tra giá đã điều chỉnh (hướng dẫn thủ công có trong báo cáo);
+- kiểm tra giá đã điều chỉnh bằng `scripts/check_adjusted.py` (tìm bước nhảy vượt biên độ trong nhiều năm và so giá giữa các nguồn);
 - đo giới hạn tốc độ bằng nhiều lần gọi hơn, trên cả universe;
 - thử các nguồn khác (`kbs`, `vnd`) để biết nguồn nào ổn định nhất;
 - vnstock thế hệ 6: theo README của kho GitHub tác giả (chưa xác minh trực tiếp), các phiên bản trước thế hệ 6 ngừng hoạt động từ 2026-11-10 và thế hệ 6 yêu cầu người dùng dùng khóa của nguồn. Phải chạy lại probe trên thế hệ 6 và xác định có cần khóa không (khóa nếu có đưa vào bằng biến môi trường, không ghi vào repo hay image).
