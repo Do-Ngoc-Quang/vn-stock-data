@@ -1,0 +1,3 @@
+# Danh sách mã (universe) do người dùng quản lý, mỗi dòng một mã. Xem D2 trong docs/design/stock-pipeline-collection.md
+FPT
+VCB
