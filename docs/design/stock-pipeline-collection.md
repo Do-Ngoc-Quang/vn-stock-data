@@ -54,6 +54,8 @@ Khi tra cứu ngày 2026-11-09:
 - Bản **3.2.4 trên PyPI bị quarantine** (không cài được) và trang liệt kê bản mới hơn **4.0.8**, nên tài liệu cũ có thể không còn khớp API hiện tại.
 - Tài liệu bản cũ **không nêu** các cột trả về, đơn vị giá (VND hay nghìn VND) và giới hạn tốc độ gọi.
 
+**Cập nhật 2026-11-09:** thử cài từ môi trường phát triển cho thấy PyPI đánh dấu dự án `vnstock` ở trạng thái `quarantined` và không có tệp nào để tải, nên không chạy probe được từ đó. Cần cài từ nguồn khác (ví dụ GitHub của tác giả) hoặc chạy trên máy khác; xem D1.
+
 Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): chạy vnstock bản hiện tại trên 1–2 mã và ghi lại tên cột, đơn vị giá, thời gian phản hồi. Kết quả được điền vào mục 2.3.
 
 ### 2.3 Kết quả probe (điền sau khi chạy)
@@ -119,7 +121,7 @@ Vì vậy bước đầu tiên là **script probe** (mục 8, Giai đoạn 0): c
 
 - Là **file cấu hình do người dùng quản lý** (ví dụ VN100 hoặc watchlist riêng), không lấy động từ API, để tập mã ổn định giữa các tuần.
 - Thay đổi danh sách được ghi nhận qua bảng `symbols` (cột `in_universe`).
-- **Quyết định còn mở:** D2 (mục 7).
+- **Đã quyết định (D2):** bắt đầu với **VN100**, lưu trong file cấu hình `config/universe.txt` (mẫu: `config/universe.example.txt`).
 
 ### 4.3 Chiến lược lấy dữ liệu
 
@@ -160,7 +162,7 @@ Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy
 
 - Mỗi lần chạy gửi một thông báo tóm tắt: số mã thành công/bị loại/lỗi, `as_of`, các cảnh báo.
 - Thất bại (trạng thái `failed`) gửi thông báo mức cao.
-- **Kênh thông báo:** chưa chọn (D6).
+- **Kênh thông báo (D6):** email.
 
 ---
 
@@ -180,7 +182,7 @@ Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy
 | `ZERO_VOLUME_DAYS` | Nhiều phiên khối lượng bằng 0 | warn |
 | `SHORT_HISTORY` | Số phiên ít hơn mức cần cho chỉ báo dài nhất | warn |
 
-Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng đề xuất 15% (bằng biên độ lớn nhất của các sàn theo hiểu biết hiện tại: HOSE ±7%, HNX ±10%, UPCoM ±15%; **cần xác minh biên độ hiện hành**, D8). Mức `warn` vì giá chưa điều chỉnh đúng cho sự kiện doanh nghiệp cũng gây ra giá trị này, và cần người xem xét.
+Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng **tạm giữ 15%** (mức rộng nhất, nên không báo sót; xem D8) (bằng biên độ lớn nhất của các sàn theo hiểu biết hiện tại: HOSE ±7%, HNX ±10%, UPCoM ±15%; **cần xác minh biên độ hiện hành**, D8). Mức `warn` vì giá chưa điều chỉnh đúng cho sự kiện doanh nghiệp cũng gây ra giá trị này, và cần người xem xét.
 
 ### 5.2 Kiểm tra theo lần chạy
 
@@ -308,13 +310,19 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch**; chỉ sau k
 
 | Mã | Câu hỏi | Lựa chọn | Gợi ý | Trạng thái |
 |---|---|---|---|---|
-| D1 | API, cột và đơn vị giá của vnstock bản hiện tại là gì? | Chạy script probe | Làm đầu tiên (Giai đoạn 0) | Mở |
-| D2 | Universe gồm những mã nào? | VN30 / VN100 / watchlist riêng | Bắt đầu nhỏ (VN30 hoặc watchlist), mở rộng sau | Mở |
-| D3 | Pipeline chạy ở đâu? | AWS Lambda hoặc ECS / GitHub Actions / máy cá nhân | Chọn theo thời gian chạy sau khi probe; lịch hàng tuần nên rất nhẹ | Mở |
-| D4 | Lưu curated ở đâu, raw ở định dạng nào? | Postgres hoặc DuckDB; Parquet hoặc CSV nén | Postgres nếu MCP server chạy từ xa; DuckDB nếu mọi thứ chạy cục bộ | Mở |
-| D5 | Có nguồn đối chiếu thứ hai không? | SSI FastConnect / không | Có nếu bạn có hoặc sẵn sàng mở tài khoản SSI; nếu không, bỏ qua giai đoạn đầu | Mở |
-| D6 | Kênh thông báo kết quả chạy? | Email / Slack / khác | Chọn kênh bạn kiểm tra hằng ngày | Mở |
-| D8 | Biên độ giá các sàn hiện hành (cho ngưỡng cảnh báo biến động ngày) | Xác minh theo quy định hiện hành | Xác minh trước khi hoàn thiện kiểm tra `LARGE_DAILY_MOVE` | Mở |
+| D1 | API, cột và đơn vị giá của vnstock bản hiện tại là gì? | Chạy script probe | Làm đầu tiên (Giai đoạn 0) | **Mở, bị chặn:** PyPI `vnstock` đang quarantine, cần nguồn cài khác để probe |
+| D2 | Universe gồm những mã nào? | VN30 / VN100 / watchlist riêng | Bắt đầu nhỏ (VN30 hoặc watchlist), mở rộng sau | **Đã chốt: VN100** (xem hệ quả dưới bảng) |
+| D3 | Pipeline chạy ở đâu? | AWS Lambda hoặc ECS / GitHub Actions / máy cá nhân | Chọn theo thời gian chạy sau khi probe; lịch hàng tuần nên rất nhẹ | **Đã chốt: AWS**, EventBridge kích hoạt. Lambda hay ECS chốt sau probe (xem dưới bảng) |
+| D4 | Lưu curated ở đâu, raw ở định dạng nào? | Postgres hoặc DuckDB; Parquet hoặc CSV nén | Postgres nếu MCP server chạy từ xa; DuckDB nếu mọi thứ chạy cục bộ | **Đã chốt: Postgres** cho curated; **Parquet** trên S3 cho raw |
+| D5 | Có nguồn đối chiếu thứ hai không? | SSI FastConnect / không | Có nếu bạn có hoặc sẵn sàng mở tài khoản SSI; nếu không, bỏ qua giai đoạn đầu | **Hoãn:** bỏ qua giai đoạn đầu (chưa có tài khoản SSI); xem lại ở Giai đoạn 3. `CROSS_SOURCE_MISMATCH` chưa bật |
+| D6 | Kênh thông báo kết quả chạy? | Email / Slack / khác | Chọn kênh bạn kiểm tra hằng ngày | **Đã chốt: email** |
+| D8 | Biên độ giá các sàn hiện hành (cho ngưỡng cảnh báo biến động ngày) | Xác minh theo quy định hiện hành | Xác minh trước khi hoàn thiện kiểm tra `LARGE_DAILY_MOVE` | **Mở, chưa xác minh được:** tra cứu 2026-11-09 cho HOSE ±7%, HNX ±10%, UPCoM ±15% (một nguồn ghi UPCoM 10%), không có nguồn chính thức nào xác nhận. Tạm dùng 15%; cần đối chiếu quy chế của HOSE/HNX |
+
+Hệ quả của các quyết định đã chốt:
+- **D2:** VN100 gồm khoảng 100 mã. Gọi tuần tự có nghỉ giữa các lần gọi, nên tổng thời gian chạy có thể vượt 15 phút.
+- **D3:** nếu probe cho thấy lần chạy vượt giới hạn 15 phút của Lambda thì dùng ECS Fargate scheduled task (đề xuất mặc định); ngược lại dùng Lambda. Cả hai đều kích hoạt bằng EventBridge `cron(0 11 ? * FRI *)`.
+- **D4:** Postgres cần chạy bền vững (ví dụ RDS). Tài khoản của pipeline có quyền ghi; tài khoản của MCP server chỉ có SELECT (xem `stock-mcp-tool.md`, mục 7).
+- **D6:** gửi email qua dịch vụ gửi thư (ví dụ SES); lỗi `failed` gửi mức cao như mục 4.7.
 
 (D7 liên quan đến MCP server, xem `stock-mcp-tool.md`.)
 

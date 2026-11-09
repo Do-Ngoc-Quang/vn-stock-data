@@ -198,7 +198,7 @@ Khuyến nghị agent gọi tool này trước khi truy vấn lần đầu trong
 
 ## 7. Triển khai và bảo mật
 
-- Nơi chạy MCP server, cách agent kết nối (cục bộ/từ xa) và cách xác thực: **chưa quyết định (D7)**. Lựa chọn này phụ thuộc vào nơi lưu curated (D4 trong `stock-pipeline-collection.md`).
+- **Đã quyết định (D7):** MCP server chạy **từ xa** (HTTP), đọc Postgres đã chốt ở D4 trong `stock-pipeline-collection.md`. Bắt buộc xác thực mọi yêu cầu (token do người dùng cấp, có thể thu hồi) và dùng TLS. Cơ chế xác thực cụ thể (bearer token tĩnh hay OAuth) chọn khi triển khai ở Giai đoạn 2, miễn đáp ứng hai yêu cầu trên.
 - Quyền cơ sở dữ liệu: chỉ SELECT, trên các bảng liệt kê ở mục 2.1.
 - Truy vấn tham số hóa; không nối chuỗi từ đầu vào của agent.
 - Đánh dấu cả hai tool là chỉ đọc trong mô tả MCP.
@@ -213,9 +213,9 @@ Khuyến nghị agent gọi tool này trước khi truy vấn lần đầu trong
 
 | Mã | Câu hỏi | Lựa chọn | Gợi ý | Trạng thái |
 |---|---|---|---|---|
-| D7 | MCP server chạy ở đâu và xác thực thế nào? | Cục bộ (stdio) / từ xa (HTTP) | Cục bộ nếu chỉ dùng cá nhân; từ xa cần xác thực | Mở |
-| D9 | Các giới hạn: 10 mã, 3.000 dòng, tốc độ gọi mỗi phút | Giữ đề xuất hoặc điều chỉnh | Giữ đề xuất, đo lại sau khi dùng thực tế | Mở |
-| D10 | Có cần thêm tool tra cứu tổng hợp nhiều mã (ví dụ xếp hạng theo thay đổi giá) | Thêm sau / không | Hoãn; đợi xem agent thực tế cần gì | Mở |
+| D7 | MCP server chạy ở đâu và xác thực thế nào? | Cục bộ (stdio) / từ xa (HTTP) | Cục bộ nếu chỉ dùng cá nhân; từ xa cần xác thực | **Đã chốt: từ xa (HTTP)** với xác thực và TLS bắt buộc (xem mục 7) |
+| D9 | Các giới hạn: 10 mã, 3.000 dòng, tốc độ gọi mỗi phút | Giữ đề xuất hoặc điều chỉnh | Giữ đề xuất, đo lại sau khi dùng thực tế | **Đã chốt: giữ đề xuất** (10 mã, 3.000 dòng); tốc độ gọi đặt 30 lần/phút/token khi triển khai. Đo lại ở Giai đoạn 3 |
+| D10 | Có cần thêm tool tra cứu tổng hợp nhiều mã (ví dụ xếp hạng theo thay đổi giá) | Thêm sau / không | Hoãn; đợi xem agent thực tế cần gì | **Đã chốt: hoãn** đến Giai đoạn 4, quyết định dựa trên log sử dụng thực tế. Lưu ý universe VN100 làm nhu cầu này nhiều khả năng xuất hiện |
 
 (D1–D6 và D8 thuộc phía pipeline, xem `stock-pipeline-collection.md`.)
 
