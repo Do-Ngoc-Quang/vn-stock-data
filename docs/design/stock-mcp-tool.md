@@ -1,6 +1,6 @@
 # Thiết kế: MCP tool truy vấn dữ liệu giao dịch cho AI agent
 
-- **Tài liệu liên quan:** `stock-pipeline-collection.md` (pipeline thu thập dữ liệu hàng tuần). MCP tool **chỉ đọc** các bảng do pipeline tạo ra, theo schema ở mục 6 của tài liệu đó.
+- **Tài liệu liên quan:** `stock-pipeline-collection.md` (pipeline thu thập dữ liệu). MCP tool **chỉ đọc** các bảng do pipeline tạo ra, theo schema ở mục 6 của tài liệu đó.
 
 ---
 
@@ -13,7 +13,7 @@ Cho phép AI agent truy vấn dữ liệu giao dịch cổ phiếu Việt Nam tr
 ### 1.2 Phạm vi giai đoạn đầu
 
 - Hai tool: `get_price_history` và `get_data_status`.
-- Dữ liệu cuối ngày (EOD), cập nhật mỗi tuần một lần.
+- Dữ liệu cuối ngày (EOD), cập nhật mỗi khi người dùng chạy pipeline (khoảng mỗi tuần).
 - Chỉ báo chọn từ danh sách cố định (mục 2.3).
 
 ### 1.3 Ngoài phạm vi
@@ -103,7 +103,7 @@ Preset giúp agent không phải tự tính ngày, và gắn với mục đích 
 
 ### 4.3 Quy tắc kiểm tra tham số
 
-1. **Mốc kết thúc mặc định là `as_of`** (phiên mới nhất trong dữ liệu), không phải ngày hôm nay. Dữ liệu cập nhật hàng tuần nên neo vào "hôm nay" có thể cho khoảng trống.
+1. **Mốc kết thúc mặc định là `as_of`** (phiên mới nhất trong dữ liệu), không phải ngày hôm nay. Dữ liệu chỉ cập nhật khi pipeline được chạy nên neo vào "hôm nay" có thể cho khoảng trống.
 2. Khoảng tùy chỉnh phải dài **từ 7 đến 365 ngày**. Ngoài khoảng này: từ chối, không tự cắt ngầm.
 3. Không cho phép ngày tương lai; `start_date` không được sau `end_date`.
 4. Tối đa **10 mã** mỗi lần gọi và tối đa **3.000 dòng** kết quả (giá trị khởi đầu, chỉnh theo kích thước kết quả thực tế).

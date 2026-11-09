@@ -1,4 +1,4 @@
-# Thiết kế: Pipeline thu thập dữ liệu giao dịch chứng khoán Việt Nam (hàng tuần)
+# Thiết kế: Pipeline thu thập dữ liệu giao dịch chứng khoán Việt Nam
 
 - **Tài liệu liên quan:** `stock-mcp-tool.md` (MCP tool để AI agent truy vấn dữ liệu). Hai tài liệu nối với nhau **chỉ qua schema ở mục 6** của tài liệu này.
 
@@ -14,7 +14,7 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 
 - Thị trường: Việt Nam (HOSE, HNX, UPCoM).
 - Dữ liệu: giá và khối lượng giao dịch hàng ngày (OHLCV), đã điều chỉnh.
-- Tần suất cập nhật: **mỗi tuần một lần, Thứ 6 lúc 18:00 (giờ Việt Nam)**.
+- Cập nhật: **người dùng kích hoạt thủ công** bằng một lệnh, khoảng mỗi tuần một lần sau khi thị trường đóng cửa.
 - Chỉ báo kỹ thuật tính sẵn (mục 6.4).
 - Chạy hoàn toàn cục bộ trên máy cá nhân (mục 3.1).
 
@@ -61,13 +61,12 @@ Kết quả quyết định cách viết adapter (mục 4.4) và thời gian ch�
 ## 3. Kiến trúc
 
 ```
-                 Thứ 6, 18:00 giờ Việt Nam
+             Người dùng chạy lệnh thủ công
+                 (python -m pipeline.run)
                           │
-                    ┌─────▼──────────────┐
-                    │ Scheduler của HĐH  │
-                    │ (cron / launchd /  │
-                    │  Task Scheduler)   │
-                    └─────┬──────────────┘
+                    ┌─────▼──────┐
+                    │  Pipeline  │
+                    └─────┬──────┘
                           │
               ┌───────────▼────────────┐
               │  Ingestion job         │
@@ -102,8 +101,7 @@ Kết quả quyết định cách viết adapter (mục 4.4) và thời gian ch�
 
 | Thành phần | Cách làm |
 |---|---|
-| Ngôn ngữ, chạy | Python, một lệnh CLI chạy trọn một lần (ví dụ `python -m pipeline.run`) |
-| Lịch | Scheduler của hệ điều hành: cron (Linux), launchd (macOS) hoặc Task Scheduler (Windows) |
+| Ngôn ngữ, chạy | Python, một lệnh CLI chạy trọn một lần (ví dụ `python -m pipeline.run`), do người dùng kích hoạt; không có scheduler hay tiến trình nền |
 | Raw | Tệp Parquet trong thư mục `data/raw/` |
 | Curated + features | Một tệp DuckDB `data/curated.duckdb` |
 | Log, tóm tắt | `data/logs/`, `data/last_run.json` |
@@ -113,14 +111,15 @@ Kết quả quyết định cách viết adapter (mục 4.4) và thời gian ch�
 
 ---
 
-## 4. Pipeline thu thập hàng tuần
+## 4. Pipeline thu thập
 
-### 4.1 Lịch chạy
+### 4.1 Kích hoạt
 
-- Chạy vào Thứ 6, 18:00 giờ Việt Nam (11:00 UTC). Lúc này HOSE đã đóng cửa nên dữ liệu phiên đã chốt.
-- Ví dụ cron: `0 18 * * 5` (máy đặt múi giờ Asia/Ho_Chi_Minh; nếu không, quy đổi sang 11:00 UTC).
-- **Máy cá nhân có thể tắt hoặc ngủ vào đúng giờ.** Giảm thiểu: đặt thêm một lịch chạy bù (khi đăng nhập hoặc mỗi ngày). Lệnh chạy bù tự kiểm tra: nếu tuần này đã có lần chạy `published` thì thoát ngay, nếu chưa thì chạy. Dựa vào tính idempotent (mục 4.6), chạy thêm không gây hại.
-- Không phụ thuộc lịch giao dịch: job lấy dữ liệu đến thời điểm chạy, phiên cuối cùng có dữ liệu là `as_of`. Khi Thứ 6 nghỉ lễ, `as_of` tự nhiên là phiên trước đó.
+- Người dùng chạy lệnh thủ công, khoảng mỗi tuần một lần sau khi thị trường đóng cửa.
+- Không phụ thuộc lịch giao dịch: pipeline lấy dữ liệu đến thời điểm chạy, phiên cuối cùng có dữ liệu là `as_of`. Chạy vào ngày nghỉ thì `as_of` là phiên trước đó.
+- Nếu chạy trước 15:00 giờ Việt Nam trong ngày giao dịch, pipeline bỏ phiên của ngày hôm nay vì có thể chưa chốt, và ghi cảnh báo.
+- Chạy lại bất cứ lúc nào đều an toàn nhờ tính idempotent (mục 4.6).
+- Lệnh chạy in tóm tắt kết quả ra màn hình và trả mã thoát khác 0 khi `failed`.
 
 ### 4.2 Danh sách mã (universe)
 
@@ -130,7 +129,7 @@ Kết quả quyết định cách viết adapter (mục 4.4) và thời gian ch�
 
 ### 4.3 Chiến lược lấy dữ liệu
 
-- Mỗi tuần **lấy lại toàn bộ lịch sử đã điều chỉnh** của mỗi mã, không chỉ nối thêm 5 phiên cuối. Lý do: khi có cổ tức hoặc chia tách, giá quá khứ bị điều chỉnh ngược; nối thêm sẽ gây lệch.
+- Mỗi lần chạy **lấy lại toàn bộ lịch sử đã điều chỉnh** của mỗi mã, không chỉ nối thêm 5 phiên cuối. Lý do: khi có cổ tức hoặc chia tách, giá quá khứ bị điều chỉnh ngược; nối thêm sẽ gây lệch.
 - **Độ sâu lịch sử tối thiểu: 3 năm.** `SMA200` cho khoảng `1Y` ở MCP tool cần khoảng 450 phiên (~2 năm); dư thêm để đệm cho mã thiếu phiên.
 - Gọi **tuần tự**, nghỉ giữa các lần gọi, thử lại có backoff khi lỗi tạm thời. Lỗi một mã không làm hỏng cả lần chạy.
 
@@ -163,11 +162,11 @@ Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy
 - Raw được ghi theo `run_id` nên không ghi đè lần chạy trước.
 - Hệ quả chấp nhận được: curated chỉ giữ **phiên bản giá điều chỉnh mới nhất**. Các phiên bản trước nằm trong raw.
 
-### 4.7 Giám sát và thông báo
+### 4.7 Kết quả và độ tươi dữ liệu
 
-- Mỗi lần chạy ghi bản tóm tắt (số mã thành công/bị loại/lỗi, `as_of`, cảnh báo) vào `data/last_run.json` và `data/logs/`.
-- Trạng thái `failed` gửi thông báo mức cao. Email qua SMTP là tùy chọn (địa chỉ và mật khẩu ứng dụng đọc từ biến môi trường, không ghi vào repo); mặc định chỉ có log và `last_run.json`.
-- `get_data_status` (xem `stock-mcp-tool.md`) cho biết `as_of` và thời điểm hoàn thành, để phát hiện lịch chạy hỏng âm thầm.
+- Mỗi lần chạy ghi bản tóm tắt (số mã thành công/bị loại/lỗi, `as_of`, cảnh báo) ra màn hình, `data/last_run.json` và `data/logs/`.
+- Vì người dùng tự chạy và theo dõi, không cần kênh thông báo ngoài.
+- Việc quên chạy được phát hiện qua `get_data_status` (xem `stock-mcp-tool.md`): kết quả cho biết `as_of` và thời điểm hoàn thành.
 
 ---
 
@@ -201,8 +200,8 @@ Ghi chú về `LARGE_DAILY_MOVE`: ngưỡng tạm là 15%, bằng biên độ l�
 
 ### 5.3 Ngưỡng thất bại
 
-- Mã có ít nhất một kiểm tra `error` bị **loại khỏi curated** trong tuần đó.
-- Nếu tỷ lệ mã bị loại hoặc lỗi lấy dữ liệu **vượt 10%** universe, lần chạy là `failed` và **không công bố**. Dữ liệu tuần trước vẫn là phiên bản được phục vụ.
+- Mã có ít nhất một kiểm tra `error` bị **loại khỏi curated** trong lần chạy đó.
+- Nếu tỷ lệ mã bị loại hoặc lỗi lấy dữ liệu **vượt 10%** universe, lần chạy là `failed` và **không công bố**. Dữ liệu của lần chạy `published` trước vẫn được phục vụ.
 - Mức 10% là đề xuất khởi đầu, điều chỉnh sau khi có dữ liệu vận hành thực tế.
 
 ---
@@ -334,21 +333,21 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 **Giai đoạn 1 — Pipeline giá**
 - Adapter vnstock, raw, validation, `prices_daily`, `runs`, `symbol_run_status`, `quality_issues`.
 - Chạy thủ công và kiểm tra bằng mắt trên một số mã.
-- Lên lịch hàng tuần bằng scheduler của hệ điều hành, kèm lịch chạy bù.
+- Lệnh chạy một phát (`python -m pipeline.run`) in tóm tắt kết quả.
 
 **Giai đoạn 2 — Chỉ báo và công bố nguyên tử**
 - Tính `features_daily`, công bố nguyên tử theo mục 6.5.
 - MCP tool ở giai đoạn này: xem `stock-mcp-tool.md`.
 
 **Giai đoạn 3 — Củng cố**
-- Nguồn đối chiếu (D5), email SMTP cho lỗi, sao lưu `data/`, báo cáo chất lượng dữ liệu theo tuần.
+- Nguồn đối chiếu (D5), sao lưu `data/`, báo cáo chất lượng dữ liệu theo từng lần chạy.
 
 **Giai đoạn 4 — Mở rộng**
 - Báo cáo tài chính (cần lưu ngày công bố để tránh sai lệch nhìn trước khi backtest).
 - Backtest các tín hiệu; ghi lại mọi khuyến nghị của AI để đánh giá sau này.
 
 **Giai đoạn 5 — Tùy chọn: đưa lên máy chủ**
-- Khi cần dùng từ nhiều máy: DuckDB sang Postgres, raw sang object storage, scheduler sang dịch vụ đám mây, MCP sang HTTP có xác thực. Thay đổi nằm ở lớp lưu trữ và triển khai vì adapter `DataProvider`, schema (mục 6) và truy vấn tham số hóa đã tách riêng.
+- Khi cần dùng từ nhiều máy: DuckDB sang Postgres, raw sang object storage, thêm scheduler trên dịch vụ đám mây, MCP sang HTTP có xác thực. Thay đổi nằm ở lớp lưu trữ và triển khai vì adapter `DataProvider`, schema (mục 6) và truy vấn tham số hóa đã tách riêng.
 
 ---
 
@@ -358,7 +357,7 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 |---|---|
 | vnstock thay đổi API hoặc nguồn bên dưới | Cô lập bằng adapter; ghi `provider_version` mỗi lần chạy; kiểm tra chất lượng sẽ bắt dữ liệu bất thường |
 | Sai đơn vị giá (nghìn VND so với VND) | Probe ở Giai đoạn 0; adapter chuẩn hóa về VND; ràng buộc và kiểm tra giá bất thường |
-| Giá điều chỉnh làm lệch quá khứ | Lấy lại toàn bộ lịch sử mỗi tuần; giữ raw để truy vết |
-| Run Thứ 6 thất bại mà không ai biết | Ghi `last_run.json`; email tùy chọn cho `failed`; `get_data_status` báo độ tươi; lần chạy dang dở không được công bố |
-| Máy tắt/ngủ đúng giờ chạy | Lịch chạy bù idempotent (mục 4.1) |
+| Giá điều chỉnh làm lệch quá khứ | Lấy lại toàn bộ lịch sử mỗi lần chạy; giữ raw để truy vết |
+| Quên chạy hoặc lần chạy thất bại mà không để ý | `get_data_status` báo `as_of`, thời điểm hoàn thành và trạng thái lần chạy gần nhất; `STALE_DATA`; lần chạy dang dở không được công bố |
+| Chạy khi phiên hôm nay chưa chốt | Bỏ phiên của ngày hôm nay nếu chạy trước 15:00 giờ Việt Nam (mục 4.1) |
 | Mất hoặc hỏng tệp `data/` (đĩa hỏng, xóa nhầm) | Sao lưu `data/curated.duckdb` và `data/raw/` định kỳ ra ổ khác; curated dựng lại được từ raw nếu raw còn |
