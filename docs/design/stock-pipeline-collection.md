@@ -359,11 +359,13 @@ Không còn điểm mở về thiết kế. Ba mục dưới đây đã chốt q
 |---|---|---|
 | D1 | Image ghim `vnstock==5.2.2`, adapter ghim một nguồn (mặc định `vci`), mọi thay đổi nguồn hay thế hệ nằm gọn trong adapter (mục 4.4). Khóa của nguồn, nếu cần, đưa vào bằng biến môi trường | Giai đoạn 0: chạy lại probe sau 2026-11-10; đối chiếu 5 ngày đổi mức giá (mục 2.2) với ngày giao dịch không hưởng quyền; kiểm tra thưởng/chia tách lớn bằng lịch sử nhiều năm |
 | D11 | **Đã đóng.** Ghép cửa sổ 1 năm, 3 cửa sổ/mã (mục 4.3) | — |
-| D8 | Ngưỡng `LARGE_DAILY_MOVE` đặt theo sàn trong `config/`, mức `warn`. Giá trị khởi đầu: HOSE 7%, HNX 10%, UPCoM 15%; dùng 15% cho mọi sàn cho tới khi xác nhận | Giai đoạn 3: đối chiếu quy chế của sàn và chốt giá trị |
+| D8 | Ngưỡng `LARGE_DAILY_MOVE` đặt theo sàn trong `config/pipeline.json`, mức `warn`: HOSE 7%, HNX 10%, UPCoM 15%, mã không rõ sàn dùng 15%. Universe ghi sàn bằng `MÃ SÀN` | Đã triển khai; còn đối chiếu giá trị với văn bản quy chế hiện hành |
 
 ---
 
 ## 8. Lộ trình (phần pipeline)
+
+*Trạng thái triển khai: Giai đoạn 1–3 đã có code và test; Giai đoạn 0 chưa chạy lại (xem README, mục "Chưa kiểm chứng").*
 
 Bốn giai đoạn, mỗi giai đoạn có điều kiện hoàn thành. Hoàn thành Giai đoạn 3 là kết thúc lộ trình; việc ngoài danh sách này nằm ngoài phạm vi (mục 1.3).
 

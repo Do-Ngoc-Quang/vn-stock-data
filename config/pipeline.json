@@ -1,0 +1,13 @@
+{
+  "provider": "vnstock",
+  "source": "vci",
+  "history_years": 3,
+  "calls_per_minute": 8,
+  "retry_attempts": 4,
+  "failure_threshold": 0.10,
+  "stale_days": 5,
+  "market_close_hour_vn": 15,
+  "short_history_rows": 200,
+  "zero_volume_ratio": 0.10,
+  "large_move_pct": {"HOSE": 7.0, "HNX": 10.0, "UPCOM": 15.0, "default": 15.0}
+}

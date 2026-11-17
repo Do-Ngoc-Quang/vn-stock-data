@@ -2,7 +2,7 @@
 
 Dữ liệu giao dịch cổ phiếu Việt Nam (EOD, cập nhật khi người dùng chạy pipeline) cho AI agent truy vấn qua MCP tool.
 
-> Trạng thái: bản nháp thiết kế, chưa có code.
+> Trạng thái: đã triển khai Giai đoạn 1–3 (pipeline, chỉ báo, công bố nguyên tử, MCP server, sao lưu, báo cáo chất lượng). Giai đoạn 0 (probe) chưa chạy lại trên vnstock thế hệ 6; chưa chạy thử với dữ liệu thật (xem mục "Chạy").
 >
 > Toàn bộ chạy **cục bộ**: chạy tay pipeline Python → DuckDB + Parquet → MCP server stdio, đóng gói bằng Docker. Chưa dùng đám mây.
 
@@ -20,8 +20,8 @@ Hai tài liệu nối với nhau chỉ qua schema ở mục 6 của tài liệu 
 ```
 vn-stock-data/
 ├── README.md
-├── Dockerfile                  # Một image dùng chung cho pipeline và MCP server (dự kiến)
-├── compose.yaml                # Chạy pipeline (dự kiến)
+├── Dockerfile                  # Một image dùng chung cho pipeline và MCP server 
+├── compose.yaml                # Chạy pipeline 
 ├── docs/
 │   └── design/                 # Tài liệu thiết kế
 ├── config/                     # Universe (danh sách mã), cấu hình pipeline
@@ -45,3 +45,28 @@ vn-stock-data/
 ```
 
 Các thư mục rỗng giữ chỗ bằng `.gitkeep`; cấu trúc có thể đổi khi chốt các quyết định mở (D1, D8).
+
+## Chạy
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest                                   # 46 test, không cần mạng
+cp config/universe.example.txt config/universe.txt # mỗi dòng: MÃ hoặc "MÃ SÀN" (HOSE/HNX/UPCOM)
+python -m pipeline.run                             # thu thập, kiểm tra, tính chỉ báo, công bố
+python -m pipeline.backup create --dest backups/   # sao lưu data/curated.duckdb và data/raw/
+python -m pipeline.backup restore --archive backups/data-XXXX.tar.gz
+python -m mcp_server.server                        # MCP server stdio (STOCK_DB_PATH để đổi đường dẫn DB)
+```
+
+Docker: `docker compose run --rm pipeline`; MCP server:
+`docker run -i --rm --network none -v "$PWD/data:/app/data:ro" vn-stock-data python -m mcp_server.server`.
+
+Mỗi lần chạy ghi `data/last_run.json`, `data/logs/run-<id>.log` và báo cáo chất lượng `data/logs/report-<id>.md`.
+MCP server ghi mỗi yêu cầu một dòng JSON (kèm `size_bytes`, `row_count`) ra stderr, hoặc ra tệp `MCP_LOG_FILE` nếu đặt.
+
+## Chưa kiểm chứng
+
+- `vnstock==5.2.2` không cài được trong môi trường phát triển nên adapter chỉ được test bằng nguồn giả; chưa gọi vnstock thật, chưa chạy VN100, chưa build image Docker.
+- Giai đoạn 0 (D1): đối chiếu 5 ngày đổi mức giá với ngày không hưởng quyền, thưởng/chia tách lớn, vnstock thế hệ 6 và khóa nguồn.
+- D8: ngưỡng `LARGE_DAILY_MOVE` (HOSE 7%, HNX 10%, UPCoM 15%) đặt theo biên độ thông thường của từng sàn, chưa đối chiếu với văn bản quy chế hiện hành.
+- Giới hạn 10 mã / 3.000 dòng của MCP chưa được chỉnh theo kích thước đo trên dữ liệu thật; log `size_bytes` có sẵn để làm việc này.
