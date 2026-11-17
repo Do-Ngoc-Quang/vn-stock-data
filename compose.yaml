@@ -1,0 +1,14 @@
+# Chạy pipeline một lần: UID=$(id -u) GID=$(id -g) docker compose run --rm pipeline
+services:
+  pipeline:
+    build: .
+    image: vn-stock-data
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./data:/app/data          # mount cả thư mục để đổi tên nguyên tử hoạt động
+      - ./config:/app/config:ro
+    # vnstock cần khóa của nguồn (nếu có): truyền qua biến môi trường, không ghi vào repo
+    environment:
+      - VNSTOCK_API_KEY
+  # MCP server do ứng dụng agent khởi chạy, không chạy qua compose:
+  #   docker run -i --rm --network none -v "$PWD/data:/app/data:ro" vn-stock-data python -m mcp_server.server
