@@ -10,7 +10,7 @@ from pathlib import Path
 class Config:
     provider: str = "vnstock"
     source: str = "vci"
-    history_years: int = 3
+    history_years: int = 2
     calls_per_minute: float = 8
     retry_attempts: int = 4
     failure_threshold: float = 0.10

@@ -1,8 +1,8 @@
 {
-  "provider": "vnstock",
-  "source": "vci",
-  "history_years": 3,
-  "calls_per_minute": 8,
+  "provider": "cafef",
+  "source": "cafef",
+  "history_years": 2,
+  "calls_per_minute": 60,
   "retry_attempts": 4,
   "failure_threshold": 0.10,
   "stale_days": 5,

@@ -7,8 +7,6 @@ services:
     volumes:
       - ./data:/app/data          # mount cả thư mục để đổi tên nguyên tử hoạt động
       - ./config:/app/config:ro
-    # vnstock cần khóa của nguồn (nếu có): truyền qua biến môi trường, không ghi vào repo
-    environment:
-      - VNSTOCK_API_KEY
+    # CafeF không cần khóa. Nếu dùng nguồn cần khóa, truyền qua biến môi trường, không ghi vào repo
   # MCP server do ứng dụng agent khởi chạy, không chạy qua compose:
   #   docker run -i --rm --network none -v "$PWD/data:/app/data:ro" vn-stock-data python -m mcp_server.server

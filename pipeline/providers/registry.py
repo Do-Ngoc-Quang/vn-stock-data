@@ -22,8 +22,15 @@ def _vnstock(cfg: Config) -> DataProvider:
     )
 
 
+def _cafef(cfg: Config) -> DataProvider:
+    from pipeline.providers.cafef_provider import CafefProvider
+
+    return CafefProvider(calls_per_minute=cfg.calls_per_minute, retry_attempts=cfg.retry_attempts)
+
+
 PROVIDERS: dict[str, Callable[[Config], DataProvider]] = {
     "vnstock": _vnstock,
+    "cafef": _cafef,
 }
 
 
