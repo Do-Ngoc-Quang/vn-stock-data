@@ -65,8 +65,8 @@ Script `scripts/probe_vnstock.py` gọi vnstock trên một vài mã và ghi bá
 | Độ sâu lịch sử | **Mỗi lần gọi chỉ trả tối đa khoảng 1 năm (248–250 dòng)**: yêu cầu 5 năm chỉ nhận 248 dòng gần nhất. Nhưng gọi theo từng cửa sổ 1 năm thì lấy được ít nhất 5 năm (FPT/VCI: 2021-11-11 đến 2026-11-09, 5 cửa sổ đều 248–250 dòng). Pipeline phải ghép nhiều cửa sổ (D11 đã đóng) |
 | Dòng của ngày chạy | Có dòng 2026-11-09 khi chạy sau 15:00 |
 
-**Còn lại của D1:**
-- đối chiếu 5 ngày đổi mức ở trên với ngày giao dịch không hưởng quyền thực tế, và kiểm tra thưởng/chia tách lớn khi có nhiều năm dữ liệu (cần D11);
+**Kiểm chứng còn lại của D1 (làm ở giai đoạn 0, không đổi thiết kế):**
+- đối chiếu 5 ngày đổi mức ở trên với ngày giao dịch không hưởng quyền thực tế, và kiểm tra thưởng/chia tách lớn bằng lịch sử nhiều năm (cửa sổ năm, mục 4.3);
 - thử các nguồn khác (`kbs`, `vnd`) để biết nguồn nào ổn định nhất;
 - vnstock thế hệ 6: theo README của kho GitHub tác giả (chưa xác minh trực tiếp), các phiên bản trước thế hệ 6 ngừng hoạt động từ 2026-11-10 và thế hệ 6 yêu cầu người dùng dùng khóa của nguồn. Phải chạy lại probe trên thế hệ 6 và xác định có cần khóa không (khóa nếu có đưa vào bằng biến môi trường, không ghi vào repo hay image).
 
@@ -353,9 +353,13 @@ Ghi `prices_daily` và `features_daily` trong **một giao dịch trên tệp t�
 
 | Mã | Nội dung | Cách đóng |
 |---|---|---|
-| D1 | Xác minh vnstock | **Đã đóng một phần.** Đã biết cách gọi, cột, kiểu, đơn vị giá, độ trễ, giới hạn 10 lượt/phút, mức độ điều chỉnh giá (mục 2.2). Còn: kiểm tra thưởng/chia tách lớn (cần D11) và thế hệ 6 / yêu cầu khóa |
-| D11 | Độ sâu lịch sử khả dụng | **Đã đóng.** Mỗi lần gọi trả tối đa ~1 năm nhưng gọi theo cửa sổ năm lấy được ≥ 5 năm (mục 2.2). Adapter ghép 3 cửa sổ/mã (mục 4.3) |
-| D8 | Biên độ giá hiện hành của từng sàn (cho ngưỡng `LARGE_DAILY_MOVE`) | Đối chiếu quy chế của HOSE/HNX. Các nguồn tra cứu cho HOSE ±7%, HNX ±10%, UPCoM ±15% nhưng không thống nhất và không có nguồn chính thức |
+Không còn điểm mở về thiết kế. Ba mục dưới đây đã chốt quyết định thiết kế; phần kiểm chứng còn lại là việc của giai đoạn triển khai.
+
+| Mã | Quyết định | Kiểm chứng khi triển khai |
+|---|---|---|
+| D1 | Image ghim `vnstock==5.2.2`, adapter ghim một nguồn (mặc định `vci`), mọi thay đổi nguồn hay thế hệ nằm gọn trong adapter (mục 4.4). Khóa của nguồn, nếu cần, đưa vào bằng biến môi trường | Giai đoạn 0: chạy lại probe sau 2026-11-10; đối chiếu 5 ngày đổi mức giá (mục 2.2) với ngày giao dịch không hưởng quyền; kiểm tra thưởng/chia tách lớn bằng lịch sử nhiều năm |
+| D11 | **Đã đóng.** Ghép cửa sổ 1 năm, 3 cửa sổ/mã (mục 4.3) | — |
+| D8 | Ngưỡng `LARGE_DAILY_MOVE` đặt theo sàn trong `config/`, mức `warn`. Giá trị khởi đầu: HOSE 7%, HNX 10%, UPCoM 15%; dùng 15% cho mọi sàn cho tới khi xác nhận | Giai đoạn 3: đối chiếu quy chế của sàn và chốt giá trị |
 
 ---
 
@@ -365,7 +369,7 @@ Bốn giai đoạn, mỗi giai đoạn có điều kiện hoàn thành. Hoàn th
 
 **Giai đoạn 0 — Xác minh**
 - Viết và chạy script probe (mục 2.2), trong image Docker nếu đã có.
-- *Hoàn thành khi:* các mục probe đã có kết quả, D1 đóng, biết thời gian chạy VN100 và cách adapter đổi tên cột, đổi đơn vị.
+- *Hoàn thành khi:* các mục kiểm chứng của D1 có kết quả, biết thời gian chạy VN100 và cách adapter đổi tên cột, đổi đơn vị.
 
 **Giai đoạn 1 — Pipeline giá**
 - Adapter vnstock, raw, validation, `prices_daily`, `runs`, `symbol_run_status`, `quality_issues`.
@@ -378,7 +382,7 @@ Bốn giai đoạn, mỗi giai đoạn có điều kiện hoàn thành. Hoàn th
 
 **Giai đoạn 3 — Hoàn thiện**
 - Sao lưu `data/`, báo cáo chất lượng dữ liệu theo từng lần chạy, đối chiếu biên độ giá (D8).
-- *Hoàn thành khi:* khôi phục được `data/` từ bản sao lưu; D8 đóng và ngưỡng `LARGE_DAILY_MOVE` được chốt.
+- *Hoàn thành khi:* khôi phục được `data/` từ bản sao lưu; ngưỡng `LARGE_DAILY_MOVE` được chốt.
 
 ---
 
