@@ -202,12 +202,13 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     cfg = load_config(args.config)
-    if cfg.provider != "vnstock":
-        print(f"Provider không hỗ trợ: {cfg.provider}", file=sys.stderr)
-        return 2
-    from pipeline.providers.vnstock_provider import VnstockProvider
+    from pipeline.providers.registry import create_provider
 
-    provider = VnstockProvider(source=cfg.source, calls_per_minute=cfg.calls_per_minute, retry_attempts=cfg.retry_attempts)
+    try:
+        provider = create_provider(cfg)
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        return 2
     summary = run_pipeline(Path(args.data_dir), Path(args.universe), cfg, provider)
     print(format_summary(summary))
     return 0 if summary["status"] == "published" else 1
