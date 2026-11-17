@@ -46,7 +46,7 @@ Các điểm dưới đây do pipeline đảm bảo (xem mục 6 của `stock-pi
 - Mọi giá là **VND**, đã điều chỉnh. `trade_date` theo ngày Việt Nam.
 - **Công bố nguyên tử**: tool chỉ đọc dữ liệu thuộc lần chạy `published` mới nhất, không bao giờ đọc lần chạy dang dở hoặc thất bại.
 - Chỉ báo là **null** khi chưa đủ số phiên để tính; tool không được thay null bằng 0.
-- Lịch sử trong cơ sở dữ liệu tối thiểu 3 năm, đủ để tính `SMA200` cho khoảng `1Y`.
+- Lịch sử trong cơ sở dữ liệu tối thiểu 2 năm (~500 phiên): khoảng `1Y` tối đa của tool cần ~250 phiên, cộng ~200 phiên để `SMA200` có giá trị ở ngày đầu khoảng.
 - Giá trị chỉ báo được tính trên **toàn bộ lịch sử** rồi mới cắt theo khoảng truy vấn, nên không phụ thuộc khoảng agent chọn.
 
 ### 2.3 Danh sách chỉ báo hỗ trợ

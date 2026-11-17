@@ -66,7 +66,8 @@ MCP server ghi mỗi yêu cầu một dòng JSON (kèm `size_bytes`, `row_count`
 
 ## Chưa kiểm chứng
 
-- `vnstock==5.2.2` không cài được trong môi trường phát triển nên adapter chỉ được test bằng nguồn giả; chưa gọi vnstock thật, chưa chạy VN100, chưa build image Docker.
+- Nguồn mặc định là CafeF (`config/pipeline.json`, không cần khóa; endpoint nội bộ, có thể đổi). Đã chạy thật 2 mã FPT, VCB (2 năm); chưa chạy VN100, chưa build image Docker. vnstock không còn là mặc định (5.2.2 không cài được từ PyPI, thế hệ 6 cần khóa).
+- Hệ số điều chỉnh `GiaDieuChinh/GiaDongCua` của CafeF chưa đối chiếu với ngày không hưởng quyền thực tế.
 - Giai đoạn 0 (D1): đối chiếu 5 ngày đổi mức giá với ngày không hưởng quyền, thưởng/chia tách lớn, vnstock thế hệ 6 và khóa nguồn.
 - D8: ngưỡng `LARGE_DAILY_MOVE` (HOSE 7%, HNX 10%, UPCoM 15%) đặt theo biên độ thông thường của từng sàn, chưa đối chiếu với văn bản quy chế hiện hành.
 - Giới hạn 10 mã / 3.000 dòng của MCP chưa được chỉnh theo kích thước đo trên dữ liệu thật; log `size_bytes` có sẵn để làm việc này.

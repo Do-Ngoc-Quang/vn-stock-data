@@ -42,7 +42,7 @@ Xây dựng một nguồn dữ liệu đáng tin cậy ("nguồn sự thật") v
 
 ### 2.1 Lựa chọn
 
-Nguồn duy nhất là **vnstock** (Python). Thư viện lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi; vì vậy mọi lời gọi nằm sau adapter (mục 4.4).
+Nguồn đang dùng là **CafeF** (adapter `pipeline/providers/cafef_provider.py`): endpoint lịch sử giá nội bộ của trang cafef.vn, không cần khóa. Giá mở/cao/thấp/đóng của endpoint là giá thô, chỉ `GiaDieuChinh` là giá đóng đã điều chỉnh, nên adapter nhân bốn giá với hệ số `GiaDieuChinh/GiaDongCua` của từng ngày; sàn (HOSE/HNX/UPCoM) được tự dò. Endpoint không có tài liệu và có thể đổi, nên vẫn nằm sau adapter. vnstock vẫn là một adapter dự phòng (thế hệ 5 không cài được từ PyPI, thế hệ 6 cần khóa của công ty chứng khoán), các mục probe bên dưới là của vnstock. Trước đây nguồn duy nhất là **vnstock** (Python). Thư viện lấy dữ liệu từ các API công khai của công ty chứng khoán, nên nguồn bên dưới có thể thay đổi; vì vậy mọi lời gọi nằm sau adapter (mục 4.4).
 
 ### 2.2 Script probe và kết quả
 
@@ -169,9 +169,9 @@ Quy tắc:
 ### 4.3 Chiến lược lấy dữ liệu
 
 - Mỗi lần chạy **lấy lại toàn bộ lịch sử đã điều chỉnh** của mỗi mã, không chỉ nối thêm 5 phiên cuối. Lý do: khi có cổ tức hoặc chia tách, giá quá khứ bị điều chỉnh ngược; nối thêm sẽ gây lệch.
-- **Độ sâu lịch sử tối thiểu: 3 năm.** Mỗi lần gọi chỉ trả tối đa khoảng 1 năm, nên adapter chia khoảng thành **các cửa sổ 1 năm** (3 lượt gọi cho mỗi mã), rồi ghép, bỏ trùng ngày và sắp theo ngày. Cửa sổ lỗi thì cả mã được tính là lỗi (không ghi lịch sử thiếu đoạn). `SMA200` cho khoảng `1Y` ở MCP tool cần khoảng 450 phiên (~2 năm); dư thêm để đệm cho mã thiếu phiên.
+- **Độ sâu lịch sử: 2 năm** (khoảng 500 phiên). MCP tool chỉ hỏi tối đa 1 năm (~250 phiên) và `SMA200` cần thêm ~200 phiên trước ngày đầu khoảng, nên 2 năm là đủ. Nguồn chỉ trả tối đa khoảng 1 năm mỗi khoảng ngày, nên adapter chia **các cửa sổ 1 năm** rồi ghép, bỏ trùng ngày và sắp theo ngày. Cửa sổ lỗi thì cả mã được tính là lỗi (không ghi lịch sử thiếu đoạn). Vẫn lấy lại toàn bộ 2 năm mỗi lần chạy vì điều chỉnh giá làm đổi quá khứ.
 - Gọi **tuần tự**, nghỉ giữa các lần gọi, thử lại có backoff khi lỗi tạm thời. Lỗi một mã không làm hỏng cả lần chạy.
-- **Hạn mức 10 lượt gọi mỗi phút** (mục 2.2): pipeline giữ nhịp tối đa 8 lượt/phút (nghỉ khoảng 7,5 giây giữa các lần gọi) để chừa đệm. Mỗi mã cần 3 lượt (3 cửa sổ năm), nên VN100 cần 300 lượt, khoảng 38 phút; thời gian này là chấp nhận được vì lệnh do người dùng chạy tay. Lỗi vượt hạn mức (`EntitlementError`) là lỗi tạm thời: chờ hết phút rồi thử lại, không tính là lỗi của mã.
+- **Nhịp gọi:** adapter CafeF (đang dùng, xem 4.4) cần khoảng 9 lượt phân trang (30 dòng/trang) cho mỗi cửa sổ năm, tức ~18 lượt/mã; nguồn không công bố hạn mức, đo thực tế 9 lượt trong ~5 giây không bị chặn. Pipeline giữ 60 lượt/phút (`calls_per_minute`), VN100 mất khoảng 30 phút, chấp nhận được vì lệnh do người dùng chạy tay. Hạn mức 10 lượt/phút ở mục 2.2 là của vnstock `vci`/`kbs`, không áp dụng cho CafeF. Lỗi HTTP 429 là lỗi tạm thời: chờ rồi thử lại, không tính là lỗi của mã.
 
 ### 4.4 Interface nguồn dữ liệu
 
@@ -364,7 +364,7 @@ Không còn điểm mở về thiết kế. Ba mục dưới đây đã chốt q
 | Mã | Quyết định | Kiểm chứng khi triển khai |
 |---|---|---|
 | D1 | Image ghim `vnstock==5.2.2`, adapter ghim một nguồn (mặc định `vci`), mọi thay đổi nguồn hay thế hệ nằm gọn trong adapter (mục 4.4). Khóa của nguồn, nếu cần, đưa vào bằng biến môi trường | Giai đoạn 0: chạy lại probe sau 2026-11-10; đối chiếu 5 ngày đổi mức giá (mục 2.2) với ngày giao dịch không hưởng quyền; kiểm tra thưởng/chia tách lớn bằng lịch sử nhiều năm |
-| D11 | **Đã đóng.** Ghép cửa sổ 1 năm, 3 cửa sổ/mã (mục 4.3) | — |
+| D11 | **Đã đóng.** Ghép cửa sổ 1 năm, 2 cửa sổ/mã (mục 4.3) | — |
 | D8 | Ngưỡng `LARGE_DAILY_MOVE` đặt theo sàn trong `config/pipeline.json`, mức `warn`: HOSE 7%, HNX 10%, UPCoM 15%, mã không rõ sàn dùng 15%. Universe ghi sàn bằng `MÃ SÀN` | Đã triển khai; còn đối chiếu giá trị với văn bản quy chế hiện hành |
 
 ---
