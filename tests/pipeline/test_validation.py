@@ -55,3 +55,11 @@ def test_close_slightly_out_of_range_is_warning_only():
     r = validate_symbol("A", d, CFG)
     assert "CLOSE_NEAR_RANGE" in codes(r) and "CLOSE_OUT_OF_RANGE" not in codes(r)
     assert not any(i.severity == "error" for i in r)
+
+
+def test_widen_range_to_close_keeps_schema_invariant():
+    from pipeline.validation.checks import widen_range_to_close
+    d = make_prices("A", n=250); d.loc[3, "close"] = d.loc[3, "high"] * 1.003; d.loc[4, "close"] = d.loc[4, "low"] * 0.997
+    w = widen_range_to_close(d)
+    assert ((w["close"] >= w["low"]) & (w["close"] <= w["high"])).all()
+    assert (w.loc[[0, 1, 2], ["high", "low"]].values == d.loc[[0, 1, 2], ["high", "low"]].values).all()

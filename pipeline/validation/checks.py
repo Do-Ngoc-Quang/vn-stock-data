@@ -17,6 +17,15 @@ class Issue:
     detail: str
 
 
+def widen_range_to_close(df: pd.DataFrame) -> pd.DataFrame:
+    """Dòng có close lệch nhẹ ngoài [low, high] (đã cảnh báo CLOSE_NEAR_RANGE): nới high/low để bao lấy close,
+    giữ ràng buộc `close BETWEEN low AND high` của schema. Chỉ gọi cho mã đã qua kiểm tra."""
+    out = df.copy()
+    out["high"] = out[["high", "close"]].max(axis=1)
+    out["low"] = out[["low", "close"]].min(axis=1)
+    return out
+
+
 def validate_symbol(symbol: str, df: pd.DataFrame, cfg: Config, exchange: str | None = None) -> list[Issue]:
     """Kiểm tra theo mã. Có ít nhất một issue `error` thì mã bị loại."""
     if df is None or len(df) == 0:

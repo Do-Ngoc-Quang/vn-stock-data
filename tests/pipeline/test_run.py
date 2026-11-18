@@ -132,3 +132,12 @@ def test_restore_rejects_path_traversal(tmp_path):
         info = tarfile.TarInfo("../x"); info.size = 1; t.addfile(info, io.BytesIO(b"x"))
     with pytest.raises(ValueError):
         restore_backup(evil, tmp_path / "d")
+
+
+def test_near_range_close_is_published_with_warning(env):
+    data_dir, uni, data = env
+    data["BBB"].loc[10, "close"] = data["BBB"].loc[10, "high"] * 1.003
+    s = run_pipeline(data_dir, uni, Config(), FakeProvider(data), now=NOW)
+    assert s["status"] == "published" and s["symbols_excluded"] == 0
+    assert q(data_dir, "SELECT count(*) FROM prices_daily WHERE symbol='BBB'")[0][0] == 260
+    assert q(data_dir, "SELECT severity FROM quality_issues WHERE check_code='CLOSE_NEAR_RANGE'") == [("warn",)]

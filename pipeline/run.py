@@ -20,7 +20,7 @@ from pipeline.errors import PermanentProviderError, ProviderError
 from pipeline.features.indicators import compute_features
 from pipeline.providers.base import DataProvider
 from pipeline.report import build_report
-from pipeline.validation.checks import Issue, check_coverage, check_stale, has_error, validate_symbol
+from pipeline.validation.checks import Issue, check_coverage, check_stale, has_error, validate_symbol, widen_range_to_close
 
 VN = ZoneInfo("Asia/Ho_Chi_Minh")
 log = logging.getLogger("pipeline")
@@ -113,7 +113,7 @@ def _run(data_dir, universe_path, cfg: Config, provider, now, now_vn, run_id) ->
             log.warning("%s: bị loại: %s", symbol, "; ".join(i.check_code for i in found if i.severity == "error"))
         else:
             status["status"] = "ok"
-            prices[symbol] = df
+            prices[symbol] = widen_range_to_close(df)
         log.info("%s: %s, %d dòng", symbol, status["status"], len(df))
 
     raw_file = None
