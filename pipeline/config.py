@@ -18,6 +18,7 @@ class Config:
     market_close_hour_vn: int = 15
     short_history_rows: int = 200
     zero_volume_ratio: float = 0.10
+    close_range_tolerance_pct: float = 1.0  # close lệch [low, high] ≤ mức này thì chỉ cảnh báo
     large_move_pct: dict = field(default_factory=lambda: {"default": 15.0})
 
     def move_threshold(self, exchange: str | None) -> float:
