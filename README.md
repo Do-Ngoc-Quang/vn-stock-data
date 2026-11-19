@@ -66,7 +66,7 @@ MCP server ghi mỗi yêu cầu một dòng JSON (kèm `size_bytes`, `row_count`
 
 ## Chưa kiểm chứng
 
-- Nguồn mặc định là CafeF (`config/pipeline.json`, không cần khóa; endpoint nội bộ, có thể đổi). Đã chạy thật trên universe ~100 mã HOSE (2 năm): 99 mã đạt, 2 mã bị loại (IDC: giá ≤ 0/high<low; PTB: close lệch [low, high] > 1%), do lỗi dữ liệu nguồn; công bố thành công, MCP kiểm tra qua stdio trên dữ liệu thật. `config/universe.txt` là danh sách ước lượng, không phải VN100 chính thức. Chưa build image Docker.
+- Nguồn mặc định là CafeF (`config/pipeline.json`, không cần khóa; endpoint nội bộ, có thể đổi). Đã chạy thật trên universe ~100 mã HOSE (2 năm): 99 mã đạt, 2 mã bị loại (IDC: giá ≤ 0/high<low; PTB: close lệch [low, high] > 1%), do lỗi dữ liệu nguồn; công bố thành công, MCP kiểm tra qua stdio trên dữ liệu thật. `config/universe.txt` là danh sách ước lượng, không phải VN100 chính thức. Image Docker đã build thử và MCP server chạy được trong container (`--network none`, `data/` gắn `:ro`) trên dữ liệu thật; chưa chạy pipeline/`compose.yaml` trong container. Trong sandbox cloud phải build với CA của proxy và `--network host`; trên máy có internet thường chỉ cần `docker build -t vn-stock-data .`.
 - Close lệch [low, high] ≤ 1% chỉ cảnh báo (`CLOSE_NEAR_RANGE`) và high/low được nới để bao close; `failure_threshold` = 20% (`config/pipeline.json`). vnstock không còn là mặc định (5.2.2 không cài được từ PyPI, thế hệ 6 cần khóa).
 - Hệ số điều chỉnh `GiaDieuChinh/GiaDongCua` của CafeF chưa đối chiếu với ngày không hưởng quyền thực tế.
 - Giai đoạn 0 (D1): đối chiếu 5 ngày đổi mức giá với ngày không hưởng quyền, thưởng/chia tách lớn, vnstock thế hệ 6 và khóa nguồn.
