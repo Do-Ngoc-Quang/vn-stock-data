@@ -2,7 +2,7 @@
 
 Dữ liệu giao dịch cổ phiếu Việt Nam (EOD, cập nhật khi người dùng chạy pipeline) cho AI agent truy vấn qua MCP tool.
 
-> Trạng thái: đã triển khai Giai đoạn 1–3 (pipeline, chỉ báo, công bố nguyên tử, MCP server, sao lưu, báo cáo chất lượng). Giai đoạn 0 (probe) chưa chạy lại trên vnstock thế hệ 6; chưa chạy thử với dữ liệu thật (xem mục "Chạy").
+> Trạng thái: đã triển khai Giai đoạn 1–3 (pipeline, chỉ báo, công bố nguyên tử, MCP server, sao lưu, báo cáo chất lượng). Giai đoạn 0 (probe) chưa chạy lại trên vnstock thế hệ 6; đã chạy thật trên 99/101 mã (xem mục "Chạy" và "Hạn chế đã biết").
 >
 > Toàn bộ chạy **cục bộ**: chạy tay pipeline Python → DuckDB + Parquet → MCP server stdio, đóng gói bằng Docker. Chưa dùng đám mây.
 
@@ -50,7 +50,7 @@ Các thư mục rỗng giữ chỗ bằng `.gitkeep`; cấu trúc có thể đ�
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest                                   # 46 test, không cần mạng
+python -m pytest                                   # 63 test, không cần mạng
 cp config/universe.example.txt config/universe.txt # mỗi dòng: MÃ hoặc "MÃ SÀN" (HOSE/HNX/UPCOM)
 python -m pipeline.run                             # thu thập, kiểm tra, tính chỉ báo, công bố
 python -m pipeline.backup create --dest backups/   # sao lưu data/curated.duckdb và data/raw/
@@ -66,7 +66,8 @@ MCP server ghi mỗi yêu cầu một dòng JSON (kèm `size_bytes`, `row_count`
 
 ## Chưa kiểm chứng
 
-- Nguồn mặc định là CafeF (`config/pipeline.json`, không cần khóa; endpoint nội bộ, có thể đổi). Đã chạy thật 2 mã FPT, VCB (2 năm); chưa chạy VN100, chưa build image Docker. vnstock không còn là mặc định (5.2.2 không cài được từ PyPI, thế hệ 6 cần khóa).
+- Nguồn mặc định là CafeF (`config/pipeline.json`, không cần khóa; endpoint nội bộ, có thể đổi). Đã chạy thật trên universe ~100 mã HOSE (2 năm): 99 mã đạt, 2 mã bị loại (IDC: giá ≤ 0/high<low; PTB: close lệch [low, high] > 1%), do lỗi dữ liệu nguồn; công bố thành công, MCP kiểm tra qua stdio trên dữ liệu thật. `config/universe.txt` là danh sách ước lượng, không phải VN100 chính thức. Image Docker đã build thử và MCP server chạy được trong container (`--network none`, `data/` gắn `:ro`) trên dữ liệu thật; pipeline cũng đã chạy trọn 101 mã trong container (`docker run` tương đương `compose.yaml`: `config/` chỉ đọc, `data/` ghi được) và công bố thành công, kết quả giống chạy ngoài container (99 đạt, 2 bị loại); chưa chạy chính lệnh `docker compose run`. Trong sandbox cloud phải build với CA của proxy và `--network host`; trên máy có internet thường chỉ cần `docker build -t vn-stock-data .`.
+- Close lệch [low, high] ≤ 1% chỉ cảnh báo (`CLOSE_NEAR_RANGE`) và high/low được nới để bao close; `failure_threshold` = 20% (`config/pipeline.json`). vnstock không còn là mặc định (5.2.2 không cài được từ PyPI, thế hệ 6 cần khóa).
 - Hệ số điều chỉnh `GiaDieuChinh/GiaDongCua` của CafeF chưa đối chiếu với ngày không hưởng quyền thực tế.
 - Giai đoạn 0 (D1): đối chiếu 5 ngày đổi mức giá với ngày không hưởng quyền, thưởng/chia tách lớn, vnstock thế hệ 6 và khóa nguồn.
 - D8: ngưỡng `LARGE_DAILY_MOVE` (HOSE 7%, HNX 10%, UPCoM 15%) đặt theo biên độ thông thường của từng sàn, chưa đối chiếu với văn bản quy chế hiện hành.

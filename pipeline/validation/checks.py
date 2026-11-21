@@ -17,6 +17,15 @@ class Issue:
     detail: str
 
 
+def widen_range_to_close(df: pd.DataFrame) -> pd.DataFrame:
+    """Dòng có close lệch nhẹ ngoài [low, high] (đã cảnh báo CLOSE_NEAR_RANGE): nới high/low để bao lấy close,
+    giữ ràng buộc `close BETWEEN low AND high` của schema. Chỉ gọi cho mã đã qua kiểm tra."""
+    out = df.copy()
+    out["high"] = out[["high", "close"]].max(axis=1)
+    out["low"] = out[["low", "close"]].min(axis=1)
+    return out
+
+
 def validate_symbol(symbol: str, df: pd.DataFrame, cfg: Config, exchange: str | None = None) -> list[Issue]:
     """Kiểm tra theo mã. Có ít nhất một issue `error` thì mã bị loại."""
     if df is None or len(df) == 0:
@@ -42,7 +51,14 @@ def validate_symbol(symbol: str, df: pd.DataFrame, cfg: Config, exchange: str | 
 
     m = (df["close"] < df["low"]) | (df["close"] > df["high"])
     if m.any():
-        add("CLOSE_OUT_OF_RANGE", "error", f"{int(m.sum())} dòng có close ngoài [low, high], đầu tiên {df.loc[m, 'trade_date'].iloc[0]}")
+        # độ lệch của close so với đầu mút gần nhất của [low, high], theo %
+        dev = pd.concat([(df["low"] - df["close"]) / df["low"], (df["close"] - df["high"]) / df["high"]], axis=1).max(axis=1) * 100
+        far = m & (dev > cfg.close_range_tolerance_pct)
+        near = m & ~far
+        if far.any():
+            add("CLOSE_OUT_OF_RANGE", "error", f"{int(far.sum())} dòng có close ngoài [low, high] quá {cfg.close_range_tolerance_pct:g}%, đầu tiên {df.loc[far, 'trade_date'].iloc[0]}")
+        if near.any():
+            add("CLOSE_NEAR_RANGE", "warn", f"{int(near.sum())} dòng có close lệch [low, high] ≤ {cfg.close_range_tolerance_pct:g}%, đầu tiên {df.loc[near, 'trade_date'].iloc[0]}")
 
     m = df["volume"] < 0
     if m.any():

@@ -4,10 +4,11 @@
   "history_years": 2,
   "calls_per_minute": 60,
   "retry_attempts": 4,
-  "failure_threshold": 0.10,
+  "failure_threshold": 0.20,
   "stale_days": 5,
   "market_close_hour_vn": 15,
   "short_history_rows": 200,
   "zero_volume_ratio": 0.10,
+  "close_range_tolerance_pct": 1.0,
   "large_move_pct": {"HOSE": 7.0, "HNX": 10.0, "UPCOM": 15.0, "default": 15.0}
 }

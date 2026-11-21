@@ -62,7 +62,7 @@ def _http_page(symbol: str, start: date, end: date, page: int, exchange: str) ->
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         raise TransientProviderError(f"HTTP {exc.code}", rate_limited=exc.code == 429) from exc
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError) as exc:  # OSError gồm URLError, TimeoutError, ConnectionResetError khi đọc phản hồi
         raise TransientProviderError(f"{type(exc).__name__}: {exc}") from exc
 
 

@@ -221,7 +221,8 @@ Bước 5–6 đảm bảo **công bố nguyên tử**: bên đọc chỉ thấy
 | `DUPLICATE_DATE` | Trùng `trade_date` | error |
 | `NON_POSITIVE_PRICE` | Có giá ≤ 0 | error |
 | `HIGH_LT_LOW` | `high < low` | error |
-| `CLOSE_OUT_OF_RANGE` | `close` ngoài `[low, high]` | error |
+| `CLOSE_OUT_OF_RANGE` | `close` ngoài `[low, high]` quá `close_range_tolerance_pct` (mặc định 1%) | error |
+| `CLOSE_NEAR_RANGE` | `close` ngoài `[low, high]` nhưng lệch ≤ `close_range_tolerance_pct` (CafeF có vài phiên lệch 0,1–0,5% quanh 05–13/05/2025) | warn |
 | `NEGATIVE_VOLUME` | `volume < 0` | error |
 | `LARGE_DAILY_MOVE` | Biến động giá đóng cửa giữa hai phiên liên tiếp vượt ngưỡng | warn |
 | `ZERO_VOLUME_DAYS` | Nhiều phiên khối lượng bằng 0 | warn |
